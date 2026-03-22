@@ -636,6 +636,7 @@ let batchQueue        = [];   // drugs left to answer in current batch
 let currentBatchDrugs = [];   // the 3 drugs in current batch
 let batchHadError     = false;// any wrong first-attempt this batch
 let batchesDone       = 0;    // completed batches
+let isReviewAll       = false; // true when reviewing all covered so far
 let completedDrugs    = [];   // all drugs from all completed batches
 
 // ─── Queue helpers ────────────────────────────────────────────────────────────
@@ -686,14 +687,19 @@ function batchComplete() {
   const reviewBtn = document.getElementById('review-batch-btn');
   const allBtn    = document.getElementById('review-all-btn');
 
-  title.textContent = `Batch ${batchesDone} complete!`;
-  title.className   = 'batch-title ' + (batchHadError ? 'retry' : 'clean');
-  perf.textContent  = batchHadError
+  if (isReviewAll) {
+    title.textContent = 'Review complete!';
+    drugs.innerHTML   = '';
+  } else {
+    title.textContent = `Batch ${batchesDone} complete!`;
+    drugs.innerHTML   = currentBatchDrugs
+      .map(d => `<span class="batch-drug-pill">${d.name}</span>`).join('');
+  }
+  isReviewAll     = false;
+  title.className = 'batch-title ' + (batchHadError ? 'retry' : 'clean');
+  perf.textContent = batchHadError
     ? 'Some drugs needed retry — review to reinforce.'
     : 'All correct first try!';
-
-  drugs.innerHTML = currentBatchDrugs
-    .map(d => `<span class="batch-drug-pill">${d.name}</span>`).join('');
 
   if (batchHadError) {
     reviewBtn.className = 'bbtn bbtn-primary';
@@ -942,6 +948,7 @@ document.getElementById('review-all-btn').addEventListener('click', () => {
   currentBatchDrugs = [...completedDrugs];
   batchQueue    = [...completedDrugs].sort(() => Math.random() - 0.5);
   batchHadError = false;
+  isReviewAll   = true;
   document.getElementById('main-card').style.display  = 'block';
   document.getElementById('batch-panel').style.display = 'none';
   // After this review, batchComplete will show the panel with currentBatchDrugs = all
