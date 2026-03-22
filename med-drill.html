@@ -75,6 +75,12 @@
     .sub-btn:hover { color: #9aa0b8; }
     .sub-btn.active { background: #1e2438; color: #c8cce0; border-color: #4a5a8a; }
 
+    .hint-answer {
+      font-size: 1.4rem; font-weight: 700; color: #e8eaf0;
+      text-align: center; margin-bottom: 10px; padding-bottom: 10px;
+      border-bottom: 1px solid #2a3050;
+    }
+
     .main-card {
       background: #1a1f2e; border: 1px solid #2a3050;
       border-radius: 12px; padding: 32px 28px;
@@ -856,9 +862,18 @@ document.getElementById('next-btn').addEventListener('click', nextDrug);
 document.getElementById('show-btn').addEventListener('click', () => {
   if (answered) return;
   wasShown = true;
-  const tag = `<span class="category-tag ${currentDrug.tag}">${currentDrug.category}</span>`;
   const hint = document.getElementById('hint-area');
-  hint.innerHTML = `${tag}<div class="explanation">${currentDrug.note}</div>`;
+  const tag  = `<span class="category-tag ${currentDrug.tag}">${currentDrug.category}</span>`;
+  const info = `${tag}<div class="explanation">${currentDrug.note}</div>`;
+
+  if (drillMode === 'brand-to-generic') {
+    hint.innerHTML = `<div class="hint-answer">${currentDrug.name}</div>${info}`;
+  } else if (drillMode === 'generic-to-brand') {
+    hint.innerHTML = `<div class="hint-answer">${currentDrug.brand}</div>${info}`;
+  } else {
+    hint.innerHTML = info;
+  }
+
   hint.removeAttribute('hidden');
   document.getElementById('show-btn').style.display = 'none';
   document.getElementById('answer-input').focus();
