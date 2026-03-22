@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medication Drill</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0e1117; color: #e8eaf0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; padding: 20px;
+    }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+    }
+    h1 { font-size: 1.3rem; color: #e8eaf0; font-weight: 700; }
+
+    .stats {
+      display: flex; gap: 16px; font-size: 0.82rem; color: #5a6380; flex-wrap: wrap;
+    }
+    .stat-val { color: #e8eaf0; font-weight: 700; }
+    .stat-val.green  { color: #4caf7d; }
+    .stat-val.orange { color: #ff9800; }
+
+    .mode-toggle-wrapper {
+      position: relative; max-width: 620px; margin-bottom: 16px;
+    }
+    .filter-toggle-row {
+      display: none; align-items: center; margin-top: 6px;
+    }
+    .filter-toggle-btn {
+      background: none; border: 1px solid #2a3050; border-radius: 6px;
+      color: #5a6380; font-size: 0.76rem; font-weight: 600;
+      padding: 4px 10px; cursor: pointer; transition: all 0.15s;
+    }
+    .filter-toggle-btn:hover { color: #9aa0b8; border-color: #3a4060; }
+    .filter-toggle-btn.open { color: #e8eaf0; border-color: #4a5a8a; }
+    .category-filters {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      background: #131720; border: 1px solid #2a3050; border-radius: 8px;
+      padding: 10px; z-index: 20;
+    }
+    .filter-btn {
+      padding: 5px 12px; border-radius: 20px; border: 1px solid #2a3050;
+      background: #1a1f2e; color: #5a6380; cursor: pointer;
+      font-size: 0.76rem; font-weight: 600; transition: all 0.15s;
+    }
+    .filter-btn:hover { color: #9aa0b8; }
+    .filter-btn.active { background: #2a3050; color: #e8eaf0; border-color: #3a4060; }
+    .filter-btn.all-btn.active { background: #1a3050; border-color: #2a5080; color: #4a9fd4; }
+
+    .mode-toggle {
+      display: flex; gap: 6px;
+    }
+    .mode-btn {
+      padding: 6px 14px; border-radius: 6px; border: 1px solid #2a3050;
+      background: #1a1f2e; color: #5a6380; cursor: pointer;
+      font-size: 0.8rem; font-weight: 600; transition: all 0.15s; flex: 1;
+    }
+    .mode-btn:hover { color: #9aa0b8; }
+    .mode-btn.active { background: #2a3050; color: #e8eaf0; border-color: #4a5a8a; }
+
+    .sub-toggle-row {
+      display: none; gap: 6px; margin-top: 6px;
+    }
+    .sub-btn {
+      padding: 5px 14px; border-radius: 6px; border: 1px solid #2a3050;
+      background: #12151c; color: #5a6380; cursor: pointer;
+      font-size: 0.76rem; font-weight: 600; transition: all 0.15s; flex: 1;
+    }
+    .sub-btn:hover { color: #9aa0b8; }
+    .sub-btn.active { background: #1e2438; color: #c8cce0; border-color: #4a5a8a; }
+
+    .main-card {
+      background: #1a1f2e; border: 1px solid #2a3050;
+      border-radius: 12px; padding: 32px 28px;
+      max-width: 580px; margin: 0 auto;
+    }
+
+    .drug-name {
+      font-size: 2.4rem; font-weight: 800; color: #e8eaf0;
+      text-align: center; margin-bottom: 6px; letter-spacing: -0.5px;
+    }
+    .drug-brand {
+      text-align: center; color: #4a5370; font-size: 0.85rem;
+      margin-bottom: 28px; font-style: italic;
+    }
+    .prompt {
+      font-size: 0.88rem; color: #5a6380; margin-bottom: 10px; text-align: center;
+    }
+
+    #answer-input {
+      width: 100%; padding: 12px 16px;
+      background: #0e1117; border: 1px solid #2a3050;
+      border-radius: 8px; color: #e8eaf0; font-size: 1rem;
+      outline: none; transition: border-color 0.15s; margin-bottom: 10px;
+    }
+    #answer-input:focus   { border-color: #4a5a8a; }
+    #answer-input.correct { border-color: #4caf7d; }
+    #answer-input.wrong   { border-color: #e05252; }
+
+    .btn-check {
+      width: 100%; padding: 11px; background: #2a3050;
+      border: 1px solid #3a4060; border-radius: 8px;
+      color: #aab0c4; cursor: pointer; font-size: 0.9rem;
+      font-weight: 600; transition: background 0.15s; margin-bottom: 14px;
+    }
+    .btn-check:hover { background: #323d60; }
+
+    .feedback {
+      border-radius: 8px; padding: 14px 16px;
+      font-size: 0.88rem; display: none; margin-bottom: 12px; line-height: 1.5;
+    }
+    .feedback.correct { background: #0d2a1a; border: 1px solid #2a6040; color: #4caf7d; display: block; }
+    .feedback.wrong   { background: #2a1010; border: 1px solid #5a2020; color: #e07070; display: block; }
+
+    .category-tag {
+      display: inline-block; padding: 2px 9px; border-radius: 10px;
+      font-size: 0.72rem; font-weight: 700; margin-left: 4px; vertical-align: middle;
+    }
+    .explanation {
+      color: #8a90a8; font-size: 0.83rem; margin-top: 8px; line-height: 1.55;
+    }
+
+    .btn-next {
+      width: 100%; padding: 11px; background: #1a3a2a;
+      border: 1px solid #2a6040; border-radius: 8px;
+      color: #4caf7d; cursor: pointer; font-size: 0.9rem;
+      font-weight: 600; transition: background 0.15s; display: none;
+    }
+    .btn-next:hover { background: #1f4a32; }
+
+    .progress-area {
+      text-align: center; margin: 18px auto 0; max-width: 580px;
+      font-size: 0.78rem; color: #3a4060;
+    }
+    .progress-bar  { height: 3px; background: #1a1f2e; border-radius: 2px; margin-top: 7px; }
+    .progress-fill { height: 100%; background: #4caf7d; border-radius: 2px; transition: width 0.4s; width: 0%; }
+
+    .all-done {
+      text-align: center; padding: 48px 20px; color: #4caf7d; font-size: 1rem; line-height: 1.8;
+    }
+
+    /* Category tag colours */
+    .cat-bt   { background: #2a0a0a; color: #e05252; border: 1px solid #5a1a1a; }
+    .cat-ap   { background: #2a0f0f; color: #d47070; border: 1px solid #5a2020; }
+    .cat-hbp  { background: #0a1525; color: #4a9fd4; border: 1px solid #1a3a5a; }
+    .cat-dia  { background: #1a1a08; color: #c4a847; border: 1px solid #4a4a15; }
+    .cat-psy  { background: #170a28; color: #9a70d4; border: 1px solid #3a1a5a; }
+    .cat-sei  { background: #0a1a1a; color: #50c4b4; border: 1px solid #1a4a4a; }
+    .cat-res  { background: #0a1a0a; color: #70c470; border: 1px solid #1a4a1a; }
+    .cat-pai  { background: #2a1508; color: #d4843a; border: 1px solid #5a3315; }
+    .cat-cho  { background: #0f1f0f; color: #60b460; border: 1px solid #254a25; }
+    .cat-thy  { background: #10102a; color: #8888d4; border: 1px solid #303060; }
+    .cat-gi   { background: #1a1a1a; color: #9090b4; border: 1px solid #383848; }
+    .cat-all  { background: #2a1515; color: #d47878; border: 1px solid #5a2828; }
+
+    .btn-show {
+      width: 100%; padding: 8px; background: #12151c;
+      border: 1px solid #2a3050; border-radius: 8px;
+      color: #5a6380; cursor: pointer; font-size: 0.82rem;
+      font-weight: 600; transition: all 0.15s; margin-bottom: 10px;
+    }
+    .btn-show:hover { background: #1a1f2e; color: #7a8299; }
+    .hint-area {
+      background: #1a1500; border: 1px solid #4a3a00;
+      border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+      font-size: 0.85rem; color: #c4a847; line-height: 1.5;
+    }
+    .hint-area[hidden] { display: none; }
+    .hint-area .explanation { color: #a09050; margin-top: 6px; }
+    .retry-prompt { color: #9a6060; font-size: 0.8rem; margin-top: 8px; font-style: italic; }
+
+    /* Batch completion panel */
+    #batch-panel { display: none; }
+    .batch-title  { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .batch-title.clean  { color: #4caf7d; }
+    .batch-title.retry  { color: #e8c050; }
+    .batch-perf   { text-align: center; color: #5a6380; font-size: 0.83rem; margin-bottom: 20px; }
+    .batch-drugs  { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 24px; }
+    .batch-drug-pill {
+      padding: 4px 13px; background: #1a1f2e; border: 1px solid #2a3050;
+      border-radius: 20px; font-size: 0.8rem; color: #9aa0b8;
+    }
+    .batch-options { display: flex; flex-direction: column; gap: 8px; }
+    .bbtn {
+      width: 100%; padding: 11px; border-radius: 8px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; transition: background 0.15s; border: none;
+    }
+    .bbtn-primary   { background: #1a3a2a; border: 1px solid #2a6040; color: #4caf7d; }
+    .bbtn-primary:hover { background: #1f4a32; }
+    .bbtn-secondary { background: #2a3050; border: 1px solid #3a4060; color: #aab0c4; }
+    .bbtn-secondary:hover { background: #323d60; }
+    .bbtn-tertiary  { background: #12151c; border: 1px solid #2a3050; color: #5a6380; font-size: 0.82rem; }
+    .bbtn-tertiary:hover { background: #1a1f2e; color: #7a8299; }
+
+    @media (max-width: 480px) {
+      .drug-name { font-size: 1.9rem; }
+      .main-card { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💊 Medication Drill</h1>
+  <div class="stats">
+    <span>Correct: <span class="stat-val green" id="val-correct">0</span>/<span class="stat-val" id="val-total">0</span></span>
+    <span>Streak: <span class="stat-val orange" id="val-streak">0</span></span>
+    <span>Mastered: <span class="stat-val" id="val-mastered">0</span></span>
+  </div>
+</header>
+
+<div class="mode-toggle-wrapper">
+  <div class="mode-toggle" id="mode-toggle">
+    <button class="mode-btn active" data-top="category">Learn Medications</button>
+    <button class="mode-btn" data-top="names">Medication Names</button>
+  </div>
+  <div class="sub-toggle-row" id="sub-toggle">
+    <button class="sub-btn active" data-mode="brand-to-generic">Brand → Generic</button>
+    <button class="sub-btn" data-mode="generic-to-brand">Generic → Brand</button>
+  </div>
+  <div class="filter-toggle-row" id="filter-toggle-row">
+    <button class="filter-toggle-btn" id="filter-toggle-btn">Filter by category ▾</button>
+  </div>
+  <div class="category-filters" id="filters" style="display:none">
+    <button class="filter-btn all-btn active" data-cat="all">All</button>
+    <button class="filter-btn" data-cat="Blood Thinner">🩸 Blood Thinners</button>
+    <button class="filter-btn" data-cat="Antiplatelet">🫀 Antiplatelets</button>
+    <button class="filter-btn" data-cat="Heart / BP">❤️ Heart / BP</button>
+    <button class="filter-btn" data-cat="Diabetes">🩺 Diabetes</button>
+    <button class="filter-btn" data-cat="Psychiatric">🧠 Psychiatric</button>
+    <button class="filter-btn" data-cat="Seizure">⚡ Seizure</button>
+    <button class="filter-btn" data-cat="Respiratory">😮‍💨 Respiratory</button>
+    <button class="filter-btn" data-cat="Pain">💊 Pain</button>
+    <button class="filter-btn" data-cat="Cholesterol">📊 Cholesterol</button>
+    <button class="filter-btn" data-cat="Thyroid">🦋 Thyroid</button>
+    <button class="filter-btn" data-cat="GI">🫃 GI / Stomach</button>
+    <button class="filter-btn" data-cat="Allergy">🤧 Allergy</button>
+  </div>
+</div>
+
+<div class="main-card" id="main-card">
+  <div class="drug-name"  id="drug-name">—</div>
+  <div class="drug-brand" id="drug-brand"></div>
+  <div class="prompt" id="drill-prompt">What is this drug used to treat?</div>
+  <input type="text" id="answer-input"
+    placeholder="Type your answer and press Enter…"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <button class="btn-show"  id="show-btn">Show Answer</button>
+  <div class="hint-area"   id="hint-area" hidden></div>
+  <button class="btn-check" id="check-btn">Check Answer</button>
+  <div class="feedback" id="feedback"></div>
+  <button class="btn-next" id="next-btn">Next →</button>
+</div>
+
+<div class="main-card" id="batch-panel">
+  <div class="batch-title" id="batch-title"></div>
+  <div class="batch-perf"  id="batch-perf"></div>
+  <div class="batch-drugs" id="batch-drugs"></div>
+  <div class="batch-options">
+    <button class="bbtn" id="next-batch-btn">Next 3 →</button>
+    <button class="bbtn" id="review-batch-btn">↩ Review this batch</button>
+    <button class="bbtn bbtn-tertiary" id="review-all-btn" style="display:none">Review all covered so far</button>
+  </div>
+</div>
+
+<div class="progress-area" id="progress-area">
+  <span id="progress-text">0 of 70 mastered</span>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</div>
+
+<script>
+// ─── Drug database ────────────────────────────────────────────────────────────
+// keywords: answer must contain at least one (case-insensitive)
+// tagClass: CSS class for the coloured category pill
+const DRUGS = [
+
+  // BLOOD THINNERS (anticoagulants)
+  { name:"Warfarin",        brand:"Coumadin",              category:"Blood Thinner", tag:"cat-bt",
+    keys:["blood thinner","anticoagulant","clot","thin blood","coagul","bleeding","afib","dvt","embol"],
+    note:"Anticoagulant — prevents and treats blood clots. Used for AFib, DVT, and pulmonary embolism. Patients bleed more easily." },
+  { name:"Apixaban",        brand:"Eliquis",               category:"Blood Thinner", tag:"cat-bt",
+    keys:["blood thinner","anticoagulant","clot","thin blood","coagul","bleeding","afib","dvt","embol"],
+    note:"Blood thinner (anticoagulant) — one of the most common newer agents for AFib and DVT prevention." },
+  { name:"Rivaroxaban",     brand:"Xarelto",               category:"Blood Thinner", tag:"cat-bt",
+    keys:["blood thinner","anticoagulant","clot","thin blood","coagul","bleeding","afib","dvt","embol"],
+    note:"Blood thinner (anticoagulant) — used for AFib, DVT, and PE prevention." },
+  { name:"Dabigatran",      brand:"Pradaxa",               category:"Blood Thinner", tag:"cat-bt",
+    keys:["blood thinner","anticoagulant","clot","thin blood","coagul","bleeding","afib","dvt"],
+    note:"Blood thinner (anticoagulant) — used for AFib. Has a reversal agent (idarucizumab)." },
+  { name:"Enoxaparin",      brand:"Lovenox",               category:"Blood Thinner", tag:"cat-bt",
+    keys:["blood thinner","anticoagulant","clot","thin blood","heparin","bleeding","dvt","embol"],
+    note:"Injectable blood thinner (low molecular weight heparin) — used for DVT and PE treatment and prevention." },
+
+  // ANTIPLATELETS
+  { name:"Clopidogrel",     brand:"Plavix",                category:"Antiplatelet",  tag:"cat-ap",
+    keys:["blood thinner","antiplatelet","platelet","clot","thin blood","heart attack","stroke","cardiac"],
+    note:"Antiplatelet — stops platelets from clumping. Used after heart attacks, strokes, and stent placement." },
+  { name:"Aspirin (81mg)",  brand:"Baby Aspirin",          category:"Antiplatelet",  tag:"cat-ap",
+    keys:["blood thinner","antiplatelet","platelet","clot","thin blood","heart attack","stroke","cardiac","heart"],
+    note:"At low dose, aspirin is an antiplatelet — prevents clotting. Used for cardiac and stroke prevention." },
+  { name:"Ticagrelor",      brand:"Brilinta",              category:"Antiplatelet",  tag:"cat-ap",
+    keys:["blood thinner","antiplatelet","platelet","clot","thin blood","heart attack","stroke","cardiac"],
+    note:"Antiplatelet — often used alongside aspirin after heart attacks or stent placement." },
+
+  // HEART / BP
+  { name:"Lisinopril",      brand:"Zestril / Prinivil",    category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","ace","heart failure"],
+    note:"ACE inhibitor — lowers blood pressure and reduces the heart's workload. Very common in hypertension and heart failure." },
+  { name:"Losartan",        brand:"Cozaar",                category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","arb","heart failure","kidney"],
+    note:"ARB — lowers blood pressure. Also protects kidneys in diabetic patients." },
+  { name:"Amlodipine",      brand:"Norvasc",               category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","calcium","chest pain","angina"],
+    note:"Calcium channel blocker — lowers blood pressure and relieves chest pain (angina)." },
+  { name:"Metoprolol",      brand:"Lopressor / Toprol",    category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","beta","rate","rhythm","heart failure"],
+    note:"Beta blocker — slows heart rate, lowers blood pressure, protects heart after MI. Very widely used." },
+  { name:"Atenolol",        brand:"Tenormin",              category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","beta","rate"],
+    note:"Beta blocker — lowers heart rate and blood pressure." },
+  { name:"Carvedilol",      brand:"Coreg",                 category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","beta","heart failure"],
+    note:"Beta blocker — primarily used for heart failure and high blood pressure." },
+  { name:"Furosemide",      brand:"Lasix",                 category:"Heart / BP",    tag:"cat-hbp",
+    keys:["diuretic","water","fluid","edema","chf","heart failure","swelling","bp","blood pressure","heart","cardiac"],
+    note:"Loop diuretic — removes excess fluid. Critical for CHF patients managing fluid overload and edema." },
+  { name:"Hydrochlorothiazide", brand:"HCTZ",             category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","bp","diuretic","water","fluid"],
+    note:"Thiazide diuretic — reduces fluid volume to lower blood pressure. Often combined with other BP meds." },
+  { name:"Spironolactone",  brand:"Aldactone",             category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","heart","cardiac","diuretic","water","fluid","edema","heart failure","bp"],
+    note:"Potassium-sparing diuretic — used for heart failure and resistant hypertension." },
+  { name:"Valsartan",       brand:"Diovan",                category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","heart","cardiac","bp","arb","heart failure"],
+    note:"ARB — lowers blood pressure and supports heart failure management." },
+  { name:"Digoxin",         brand:"Lanoxin",               category:"Heart / BP",    tag:"cat-hbp",
+    keys:["heart","cardiac","heart failure","afib","rate","rhythm","chf"],
+    note:"Used for heart failure and AFib rate control. Narrow therapeutic window — toxicity is a real concern." },
+  { name:"Amiodarone",      brand:"Pacerone / Cordarone",  category:"Heart / BP",    tag:"cat-hbp",
+    keys:["heart","cardiac","rhythm","arrhythmia","afib","rate"],
+    note:"Antiarrhythmic — controls dangerous heart rhythms including AFib and ventricular arrhythmias." },
+  { name:"Nitroglycerin",   brand:"Nitrostat / Nitro-Dur", category:"Heart / BP",    tag:"cat-hbp",
+    keys:["heart","cardiac","chest pain","angina","nitro","coronary","blood pressure","bp"],
+    note:"Dilates blood vessels to relieve chest pain (angina). Can cause a rapid drop in blood pressure." },
+  { name:"Diltiazem",       brand:"Cardizem",              category:"Heart / BP",    tag:"cat-hbp",
+    keys:["heart","cardiac","rate","rhythm","blood pressure","hypertension","bp","calcium","afib","angina"],
+    note:"Calcium channel blocker — controls heart rate in AFib and lowers blood pressure." },
+  { name:"Clonidine",       brand:"Catapres",              category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","bp","heart","cardiac","adhd"],
+    note:"Lowers blood pressure. Also used for ADHD and opioid withdrawal. Abrupt discontinuation can spike BP dangerously." },
+
+  // DIABETES
+  { name:"Metformin",       brand:"Glucophage",            category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"First-line type 2 diabetes med — lowers blood sugar by reducing glucose production in the liver." },
+  { name:"Glipizide",       brand:"Glucotrol",             category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"Sulfonylurea — stimulates the pancreas to release insulin. Risk of hypoglycemia." },
+  { name:"Glyburide",       brand:"Micronase / DiaBeta",   category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"Sulfonylurea — lowers blood sugar in type 2 diabetes. Higher hypoglycemia risk than newer agents." },
+  { name:"Sitagliptin",     brand:"Januvia",               category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"DPP-4 inhibitor — helps control blood sugar levels in type 2 diabetes." },
+  { name:"Empagliflozin",   brand:"Jardiance",             category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin","heart","kidney"],
+    note:"SGLT2 inhibitor — lowers blood sugar and has added heart and kidney protective benefits." },
+  { name:"Liraglutide",     brand:"Victoza",               category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin","weight"],
+    note:"GLP-1 agonist — injectable for type 2 diabetes. Also used for weight management at higher doses." },
+  { name:"Insulin Glargine",brand:"Lantus / Basaglar",     category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"Long-acting insulin — provides steady baseline blood sugar control, usually injected once daily." },
+  { name:"Insulin Lispro",  brand:"Humalog",               category:"Diabetes",      tag:"cat-dia",
+    keys:["diabetes","diabetic","blood sugar","sugar","glucose","insulin"],
+    note:"Rapid-acting insulin — taken with meals to control blood sugar spikes after eating." },
+
+  // PSYCHIATRIC
+  { name:"Sertraline",      brand:"Zoloft",                category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","ssri","psychiatric","mental","mood","ocd"],
+    note:"SSRI antidepressant — treats depression, anxiety, OCD, and PTSD. One of the most commonly prescribed drugs in the US." },
+  { name:"Fluoxetine",      brand:"Prozac",                category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","ssri","psychiatric","mental","mood"],
+    note:"SSRI antidepressant — treats depression, anxiety, OCD, and bulimia." },
+  { name:"Escitalopram",    brand:"Lexapro",               category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","ssri","psychiatric","mental","mood"],
+    note:"SSRI antidepressant — treats depression and generalized anxiety disorder." },
+  { name:"Citalopram",      brand:"Celexa",                category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","ssri","psychiatric","mental","mood"],
+    note:"SSRI antidepressant — treats depression and anxiety disorders." },
+  { name:"Bupropion",       brand:"Wellbutrin / Zyban",    category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","antidepressant","psychiatric","mental","mood","smoking","adhd"],
+    note:"Antidepressant (NDRI) — also used for smoking cessation (Zyban) and sometimes ADHD." },
+  { name:"Venlafaxine",     brand:"Effexor",               category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","snri","psychiatric","mental","mood","pain"],
+    note:"SNRI antidepressant — treats depression, anxiety disorders, and nerve pain." },
+  { name:"Duloxetine",      brand:"Cymbalta",              category:"Psychiatric",   tag:"cat-psy",
+    keys:["depression","anxiety","antidepressant","snri","psychiatric","mental","mood","pain","nerve"],
+    note:"SNRI — treats depression, anxiety, diabetic nerve pain, and fibromyalgia." },
+  { name:"Quetiapine",      brand:"Seroquel",              category:"Psychiatric",   tag:"cat-psy",
+    keys:["bipolar","schizophrenia","antipsychotic","psychiatric","mental","psychosis","mood","sleep"],
+    note:"Antipsychotic — used for bipolar disorder, schizophrenia, and as an adjunct for depression. Widely used off-label for sleep." },
+  { name:"Risperidone",     brand:"Risperdal",             category:"Psychiatric",   tag:"cat-psy",
+    keys:["bipolar","schizophrenia","antipsychotic","psychiatric","mental","psychosis","mood"],
+    note:"Antipsychotic — treats schizophrenia, bipolar disorder, and irritability in autism spectrum disorder." },
+  { name:"Aripiprazole",    brand:"Abilify",               category:"Psychiatric",   tag:"cat-psy",
+    keys:["bipolar","schizophrenia","antipsychotic","psychiatric","mental","psychosis","mood","depression"],
+    note:"Atypical antipsychotic — used for schizophrenia, bipolar disorder, and as an add-on for depression." },
+  { name:"Lithium",         brand:"Lithobid / Eskalith",   category:"Psychiatric",   tag:"cat-psy",
+    keys:["bipolar","psychiatric","mental","mood","mania"],
+    note:"Mood stabilizer — primary treatment for bipolar disorder. Very narrow therapeutic window; toxicity is serious." },
+  { name:"Alprazolam",      brand:"Xanax",                 category:"Psychiatric",   tag:"cat-psy",
+    keys:["anxiety","benzo","benzodiazepine","psychiatric","mental","panic","sedative","sleep"],
+    note:"Benzodiazepine — fast-acting for anxiety and panic attacks. High dependency potential." },
+  { name:"Lorazepam",       brand:"Ativan",                category:"Psychiatric",   tag:"cat-psy",
+    keys:["anxiety","benzo","benzodiazepine","psychiatric","mental","panic","sedative","seizure"],
+    note:"Benzodiazepine — used for anxiety, seizures, and procedural sedation. Also given by EMS for active seizures." },
+  { name:"Clonazepam",      brand:"Klonopin",              category:"Psychiatric",   tag:"cat-psy",
+    keys:["anxiety","benzo","benzodiazepine","psychiatric","mental","panic","seizure"],
+    note:"Benzodiazepine — treats panic disorder, anxiety disorders, and some seizure types." },
+  { name:"Zolpidem",        brand:"Ambien",                category:"Psychiatric",   tag:"cat-psy",
+    keys:["sleep","insomnia","sedative","psychiatric"],
+    note:"Sedative-hypnotic — prescribed for insomnia. Can cause confusion and unusual behavior, especially in elderly patients." },
+
+  // SEIZURE
+  { name:"Levetiracetam",   brand:"Keppra",                category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological"],
+    note:"Anticonvulsant — one of the most commonly prescribed seizure medications. Also given IV by EMS." },
+  { name:"Phenytoin",       brand:"Dilantin",              category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological"],
+    note:"Anticonvulsant — treats and prevents seizures. Narrow therapeutic window; toxicity can cause ataxia and nystagmus." },
+  { name:"Valproic Acid",   brand:"Depakote",              category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological","bipolar","mood","migraine"],
+    note:"Anticonvulsant and mood stabilizer — used for seizures, bipolar disorder, and migraine prevention." },
+  { name:"Lamotrigine",     brand:"Lamictal",              category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological","bipolar","mood"],
+    note:"Anticonvulsant — used for seizures and bipolar disorder maintenance." },
+  { name:"Carbamazepine",   brand:"Tegretol",              category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological","nerve","pain"],
+    note:"Anticonvulsant — treats seizures and nerve pain (trigeminal neuralgia)." },
+  { name:"Gabapentin",      brand:"Neurontin",             category:"Seizure",       tag:"cat-sei",
+    keys:["seizure","epilepsy","anticonvulsant","neurological","nerve","pain","neuropathy","anxiety"],
+    note:"Treats nerve pain (neuropathy), seizures, and is widely used off-label for anxiety. Very commonly prescribed." },
+
+  // RESPIRATORY
+  { name:"Albuterol",       brand:"ProAir / Ventolin",     category:"Respiratory",   tag:"cat-res",
+    keys:["asthma","breathing","respiratory","bronchodilator","copd","lung","inhaler","wheeze","airway"],
+    note:"Short-acting bronchodilator — rapidly opens airways. First-line for asthma and COPD attacks." },
+  { name:"Tiotropium",      brand:"Spiriva",               category:"Respiratory",   tag:"cat-res",
+    keys:["copd","breathing","respiratory","bronchodilator","lung","inhaler"],
+    note:"Long-acting bronchodilator — daily maintenance therapy for COPD. Not for acute attacks." },
+  { name:"Fluticasone",     brand:"Flovent / Flonase",     category:"Respiratory",   tag:"cat-res",
+    keys:["asthma","breathing","respiratory","steroid","inhaler","lung","allergy","nasal","inflammation"],
+    note:"Inhaled corticosteroid — reduces airway inflammation in asthma. Flonase version treats nasal allergies." },
+  { name:"Montelukast",     brand:"Singulair",             category:"Respiratory",   tag:"cat-res",
+    keys:["asthma","breathing","respiratory","lung","allergy","allergies"],
+    note:"Leukotriene receptor antagonist — maintenance therapy for asthma and seasonal allergies." },
+  { name:"Prednisone",      brand:"Deltasone",             category:"Respiratory",   tag:"cat-res",
+    keys:["asthma","breathing","respiratory","steroid","inflammation","inflammatory","immune","copd","allergy","lung"],
+    note:"Oral corticosteroid — treats severe inflammation, asthma flares, COPD exacerbations, and autoimmune conditions." },
+
+  // PAIN
+  { name:"Hydrocodone",     brand:"Vicodin / Norco",       category:"Pain",          tag:"cat-pai",
+    keys:["pain","opioid","narcotic","opiate","analgesic"],
+    note:"Opioid painkiller — usually combined with acetaminophen. Used for moderate-to-severe pain. High dependency risk." },
+  { name:"Oxycodone",       brand:"OxyContin / Percocet",  category:"Pain",          tag:"cat-pai",
+    keys:["pain","opioid","narcotic","opiate","analgesic"],
+    note:"Opioid painkiller — OxyContin is extended-release; Percocet includes acetaminophen." },
+  { name:"Tramadol",        brand:"Ultram",                category:"Pain",          tag:"cat-pai",
+    keys:["pain","opioid","narcotic","analgesic","opiate"],
+    note:"Atypical opioid — used for moderate pain. Lower (but real) abuse potential." },
+  { name:"Ibuprofen",       brand:"Advil / Motrin",        category:"Pain",          tag:"cat-pai",
+    keys:["pain","inflammation","nsaid","anti-inflammatory","fever","arthritis"],
+    note:"NSAID — treats pain, inflammation, and fever. Long-term use can cause GI bleeding and kidney issues." },
+  { name:"Cyclobenzaprine", brand:"Flexeril",              category:"Pain",          tag:"cat-pai",
+    keys:["muscle","relaxant","muscle relaxant","spasm","pain","musculoskeletal"],
+    note:"Muscle relaxant — treats muscle spasms. Can cause significant sedation." },
+
+  // CHOLESTEROL
+  { name:"Atorvastatin",    brand:"Lipitor",               category:"Cholesterol",   tag:"cat-cho",
+    keys:["cholesterol","statin","lipid","cardiovascular","heart","ldl"],
+    note:"Statin — lowers LDL cholesterol to reduce risk of heart attack and stroke. Most widely prescribed statin." },
+  { name:"Simvastatin",     brand:"Zocor",                 category:"Cholesterol",   tag:"cat-cho",
+    keys:["cholesterol","statin","lipid","cardiovascular","heart","ldl"],
+    note:"Statin — lowers cholesterol and reduces cardiovascular risk." },
+  { name:"Rosuvastatin",    brand:"Crestor",               category:"Cholesterol",   tag:"cat-cho",
+    keys:["cholesterol","statin","lipid","cardiovascular","heart","ldl"],
+    note:"Statin — one of the most potent for lowering LDL cholesterol." },
+
+  // THYROID
+  { name:"Levothyroxine",   brand:"Synthroid / Levoxyl",   category:"Thyroid",       tag:"cat-thy",
+    keys:["thyroid","hypothyroid","hormone"],
+    note:"Thyroid hormone replacement — treats hypothyroidism (underactive thyroid). One of the most commonly prescribed drugs overall." },
+
+  // GI
+  { name:"Omeprazole",      brand:"Prilosec",              category:"GI",            tag:"cat-gi",
+    keys:["acid","reflux","gerd","stomach","heartburn","ulcer","ppi","gi","gastrointestinal"],
+    note:"Proton pump inhibitor (PPI) — reduces stomach acid. Used for GERD, acid reflux, and ulcers." },
+  { name:"Pantoprazole",    brand:"Protonix",              category:"GI",            tag:"cat-gi",
+    keys:["acid","reflux","gerd","stomach","heartburn","ulcer","ppi","gi","gastrointestinal"],
+    note:"Proton pump inhibitor — reduces stomach acid. Used for GERD and erosive esophagitis." },
+  { name:"Ondansetron",     brand:"Zofran",                category:"GI",            tag:"cat-gi",
+    keys:["nausea","vomit","antiemetic","gi","stomach"],
+    note:"Antiemetic — prevents and treats nausea and vomiting. Common in post-op and chemo patients; also used in EMS." },
+
+  // ALLERGY
+  { name:"Diphenhydramine", brand:"Benadryl",              category:"Allergy",       tag:"cat-all",
+    keys:["allergy","antihistamine","histamine","allergic","sleep","sedative","itch"],
+    note:"First-generation antihistamine — treats allergies and itching. Also used as a sleep aid. Causes significant sedation." },
+  { name:"Cetirizine",      brand:"Zyrtec",                category:"Allergy",       tag:"cat-all",
+    keys:["allergy","antihistamine","histamine","allergic"],
+    note:"Second-generation antihistamine — treats seasonal allergies with less sedation than Benadryl." },
+  { name:"Loratadine",      brand:"Claritin",              category:"Allergy",       tag:"cat-all",
+    keys:["allergy","antihistamine","histamine","allergic"],
+    note:"Non-drowsy antihistamine — treats seasonal and perennial allergies." },
+];
+
+const TOTAL = DRUGS.length;
+
+// ─── Specific conditions (used in single-category drill mode) ─────────────────
+const CONDITIONS = {
+  "Warfarin":           ["afib","atrial fibrillation","dvt","deep vein thrombosis","pulmonary embolism","pe","blood clot","stroke"],
+  "Apixaban":           ["afib","atrial fibrillation","dvt","deep vein thrombosis","pulmonary embolism","pe","blood clot","stroke"],
+  "Rivaroxaban":        ["afib","atrial fibrillation","dvt","deep vein thrombosis","pulmonary embolism","pe","blood clot","stroke"],
+  "Dabigatran":         ["afib","atrial fibrillation","dvt","deep vein thrombosis","blood clot","stroke"],
+  "Enoxaparin":         ["dvt","deep vein thrombosis","pulmonary embolism","pe","blood clot"],
+  "Clopidogrel":        ["heart attack","stroke","stent","coronary artery","acs","acute coronary"],
+  "Aspirin (81mg)":     ["heart attack","stroke","coronary artery","cardiac prevention","acs"],
+  "Ticagrelor":         ["heart attack","acute coronary","acs","stent"],
+  "Lisinopril":         ["hypertension","high blood pressure","heart failure","kidney protection","post mi"],
+  "Losartan":           ["hypertension","high blood pressure","heart failure","kidney protection","diabetic nephropathy"],
+  "Amlodipine":         ["hypertension","high blood pressure","angina","chest pain"],
+  "Metoprolol":         ["hypertension","high blood pressure","heart failure","arrhythmia","afib","rate control","angina"],
+  "Atenolol":           ["hypertension","high blood pressure","angina","arrhythmia"],
+  "Carvedilol":         ["heart failure","hypertension","high blood pressure"],
+  "Furosemide":         ["heart failure","edema","fluid overload","chf","hypertension","swelling"],
+  "Hydrochlorothiazide":["hypertension","high blood pressure","edema"],
+  "Spironolactone":     ["heart failure","edema","hypertension","fluid overload"],
+  "Valsartan":          ["hypertension","high blood pressure","heart failure"],
+  "Digoxin":            ["heart failure","afib","atrial fibrillation","rate control"],
+  "Amiodarone":         ["afib","atrial fibrillation","ventricular tachycardia","arrhythmia","vt"],
+  "Nitroglycerin":      ["angina","chest pain","coronary artery","acs","acute coronary"],
+  "Diltiazem":          ["afib","atrial fibrillation","angina","hypertension","rate control"],
+  "Clonidine":          ["hypertension","high blood pressure","adhd","opioid withdrawal"],
+  "Metformin":          ["type 2 diabetes","diabetes","blood sugar","glucose"],
+  "Glipizide":          ["type 2 diabetes","diabetes","blood sugar","glucose"],
+  "Glyburide":          ["type 2 diabetes","diabetes","blood sugar","glucose"],
+  "Sitagliptin":        ["type 2 diabetes","diabetes","blood sugar","glucose"],
+  "Empagliflozin":      ["type 2 diabetes","diabetes","blood sugar","heart failure","kidney disease"],
+  "Liraglutide":        ["type 2 diabetes","diabetes","blood sugar","obesity","weight"],
+  "Insulin Glargine":   ["type 1 diabetes","type 2 diabetes","diabetes","blood sugar"],
+  "Insulin Lispro":     ["type 1 diabetes","type 2 diabetes","diabetes","blood sugar","mealtime"],
+  "Sertraline":         ["depression","anxiety","ocd","ptsd","panic","major depressive"],
+  "Fluoxetine":         ["depression","anxiety","ocd","bulimia","panic","major depressive"],
+  "Escitalopram":       ["depression","anxiety","generalized anxiety","major depressive"],
+  "Citalopram":         ["depression","anxiety","major depressive"],
+  "Bupropion":          ["depression","smoking","adhd","major depressive","seasonal affective"],
+  "Venlafaxine":        ["depression","anxiety","generalized anxiety","panic","nerve pain"],
+  "Duloxetine":         ["depression","anxiety","nerve pain","fibromyalgia","neuropathy","chronic pain"],
+  "Quetiapine":         ["bipolar","schizophrenia","depression","insomnia","psychosis"],
+  "Risperidone":        ["schizophrenia","bipolar","psychosis","autism"],
+  "Aripiprazole":       ["schizophrenia","bipolar","depression","psychosis"],
+  "Lithium":            ["bipolar","mania","mood stabilization"],
+  "Alprazolam":         ["anxiety","panic","panic attack","generalized anxiety"],
+  "Lorazepam":          ["anxiety","panic","seizure","agitation","sedation"],
+  "Clonazepam":         ["anxiety","panic","seizure","epilepsy"],
+  "Zolpidem":           ["insomnia","sleep"],
+  "Levetiracetam":      ["epilepsy","seizure"],
+  "Phenytoin":          ["epilepsy","seizure"],
+  "Valproic Acid":      ["epilepsy","seizure","bipolar","migraine"],
+  "Lamotrigine":        ["epilepsy","seizure","bipolar"],
+  "Carbamazepine":      ["epilepsy","seizure","trigeminal neuralgia","nerve pain"],
+  "Gabapentin":         ["nerve pain","neuropathy","epilepsy","seizure","anxiety","fibromyalgia"],
+  "Albuterol":          ["asthma","copd","bronchospasm","wheezing","shortness of breath"],
+  "Tiotropium":         ["copd","chronic obstructive","bronchospasm"],
+  "Fluticasone":        ["asthma","copd","allergic rhinitis","allergy","nasal congestion"],
+  "Montelukast":        ["asthma","allergic rhinitis","allergy","seasonal allerg"],
+  "Prednisone":         ["asthma","copd","inflammation","allergic","autoimmune","arthritis"],
+  "Hydrocodone":        ["pain","acute pain","chronic pain","moderate pain","severe pain"],
+  "Oxycodone":          ["pain","acute pain","chronic pain","moderate pain","severe pain"],
+  "Tramadol":           ["pain","moderate pain","chronic pain"],
+  "Cyclobenzaprine":    ["muscle spasm","muscle pain","musculoskeletal","back pain"],
+  "Ibuprofen":          ["pain","inflammation","fever","arthritis"],
+  "Levothyroxine":      ["hypothyroidism","underactive thyroid","thyroid"],
+  "Atorvastatin":       ["high cholesterol","hyperlipidemia","cardiovascular","heart attack prevention"],
+  "Simvastatin":        ["high cholesterol","hyperlipidemia","cardiovascular"],
+  "Rosuvastatin":       ["high cholesterol","hyperlipidemia","cardiovascular"],
+  "Omeprazole":         ["gerd","acid reflux","heartburn","ulcer","gastritis"],
+  "Pantoprazole":       ["gerd","acid reflux","heartburn","ulcer","gastritis"],
+  "Ondansetron":        ["nausea","vomiting"],
+  "Diphenhydramine":    ["allergic reaction","allergy","hives","itching","insomnia","anaphylaxis"],
+  "Cetirizine":         ["allergic rhinitis","allergy","hives","seasonal allerg"],
+  "Loratadine":         ["allergic rhinitis","allergy","hives","seasonal allerg"],
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const score = { correct: 0, total: 0, streak: 0 };
+const masteredSet  = new Set();
+const drugStats    = {};          // name → { correct: 0, wrong: 0 }
+DRUGS.forEach(d => { drugStats[d.name] = { correct: 0, wrong: 0 }; });
+
+let drillMode        = 'category'; // 'category' | 'brand-to-generic' | 'generic-to-brand'
+let activeCategories = new Set(['all']);
+let queue      = [];
+let wrongQueue = [];
+
+function isSingleCategory() {
+  return !activeCategories.has('all') && activeCategories.size === 1;
+}
+function getGenericKeys(drug) {
+  return drug.name.replace(/\(.*?\)/g,'').trim().toLowerCase()
+    .split(/\s+/).filter(w => w.length > 3);
+}
+function getBrandKeys(drug) {
+  return drug.brand.split('/').map(b => b.trim().toLowerCase()).filter(b => b.length > 2);
+}
+let currentDrug       = null;
+let answered          = false;
+let wasShown          = false;
+let needsRetry        = false;
+
+// Batch state
+let batchQueue        = [];   // drugs left to answer in current batch
+let currentBatchDrugs = [];   // the 3 drugs in current batch
+let batchHadError     = false;// any wrong first-attempt this batch
+let batchesDone       = 0;    // completed batches
+let completedDrugs    = [];   // all drugs from all completed batches
+
+// ─── Queue helpers ────────────────────────────────────────────────────────────
+function getActiveDrugs() {
+  if (activeCategories.has('all'))
+    return DRUGS.filter(d => !masteredSet.has(d.name));
+  return DRUGS.filter(d => activeCategories.has(d.category) && !masteredSet.has(d.name));
+}
+
+function buildQueue() {
+  queue = [...getActiveDrugs()].sort(() => Math.random() - 0.5);
+}
+
+function startNewBatch(drugsOverride) {
+  // drugsOverride: pass an array to review specific drugs, else pull fresh from queue
+  if (drugsOverride) {
+    currentBatchDrugs = drugsOverride;
+  } else {
+    if (queue.length === 0) buildQueue();
+    currentBatchDrugs = [];
+    while (currentBatchDrugs.length < 3 && queue.length > 0) {
+      currentBatchDrugs.push(queue.shift());
+    }
+    if (currentBatchDrugs.length === 0) {
+      document.getElementById('main-card').innerHTML =
+        `<div class="all-done">🎉 All drugs in this category covered!<br>
+         <small style="color:#3a4060;font-size:0.8rem">Switch categories or refresh to keep drilling.</small></div>`;
+      document.getElementById('main-card').style.display = 'block';
+      document.getElementById('batch-panel').style.display = 'none';
+      return;
+    }
+  }
+  batchQueue    = [...currentBatchDrugs].sort(() => Math.random() - 0.5);
+  batchHadError = false;
+  document.getElementById('main-card').style.display  = 'block';
+  document.getElementById('batch-panel').style.display = 'none';
+  nextDrug();
+}
+
+function batchComplete() {
+  batchesDone++;
+  completedDrugs.push(...currentBatchDrugs);
+
+  const title  = document.getElementById('batch-title');
+  const perf   = document.getElementById('batch-perf');
+  const drugs  = document.getElementById('batch-drugs');
+  const nextBtn   = document.getElementById('next-batch-btn');
+  const reviewBtn = document.getElementById('review-batch-btn');
+  const allBtn    = document.getElementById('review-all-btn');
+
+  title.textContent = `Batch ${batchesDone} complete!`;
+  title.className   = 'batch-title ' + (batchHadError ? 'retry' : 'clean');
+  perf.textContent  = batchHadError
+    ? 'Some drugs needed retry — review to reinforce.'
+    : 'All correct first try!';
+
+  drugs.innerHTML = currentBatchDrugs
+    .map(d => `<span class="batch-drug-pill">${d.name}</span>`).join('');
+
+  if (batchHadError) {
+    reviewBtn.className = 'bbtn bbtn-primary';
+    nextBtn.className   = 'bbtn bbtn-secondary';
+  } else {
+    nextBtn.className   = 'bbtn bbtn-primary';
+    reviewBtn.className = 'bbtn bbtn-secondary';
+  }
+
+  if (batchesDone >= 2) {
+    allBtn.style.display = 'block';
+    allBtn.textContent   = `Review all ${completedDrugs.length} covered so far`;
+  } else {
+    allBtn.style.display = 'none';
+  }
+
+  document.getElementById('main-card').style.display  = 'none';
+  document.getElementById('batch-panel').style.display = 'block';
+}
+
+// ─── Display ──────────────────────────────────────────────────────────────────
+function nextDrug() {
+  answered   = false;
+  wasShown   = false;
+  needsRetry = false;
+  const inp = document.getElementById('answer-input');
+  inp.value = ''; inp.className = '';
+  document.getElementById('feedback').className  = 'feedback';
+  const hintEl = document.getElementById('hint-area');
+  hintEl.setAttribute('hidden', '');
+  hintEl.innerHTML = '';
+  document.getElementById('show-btn').style.display  = 'block';
+  document.getElementById('next-btn').style.display  = 'none';
+  document.getElementById('check-btn').style.display = 'block';
+
+  if (batchQueue.length === 0) { batchComplete(); return; }
+
+  currentDrug = batchQueue.shift();
+  const prompt = document.getElementById('drill-prompt');
+  if (drillMode === 'brand-to-generic') {
+    document.getElementById('drug-name').textContent  = currentDrug.brand.split('/')[0].trim();
+    document.getElementById('drug-brand').textContent = '';
+    prompt.textContent = 'What is the generic name?';
+  } else if (drillMode === 'generic-to-brand') {
+    document.getElementById('drug-name').textContent  = currentDrug.name;
+    document.getElementById('drug-brand').textContent = '';
+    prompt.textContent = 'What is the brand name?';
+  } else {
+    document.getElementById('drug-name').textContent  = currentDrug.name;
+    document.getElementById('drug-brand').textContent = `Also known as: ${currentDrug.brand}`;
+    prompt.textContent = isSingleCategory()
+      ? 'What condition specifically does this treat?'
+      : 'What is this drug used to treat?';
+  }
+  inp.focus();
+}
+
+// ─── Answer checking ──────────────────────────────────────────────────────────
+function checkAnswer() {
+  const inp    = document.getElementById('answer-input');
+  const answer = inp.value.toLowerCase().trim();
+  if (!answer) { inp.focus(); return; }
+
+  let correct, tag, answerNote;
+  const fb = document.getElementById('feedback');
+  if (drillMode === 'brand-to-generic') {
+    correct    = getGenericKeys(currentDrug).some(k => answer.includes(k));
+    tag        = `<span class="category-tag ${currentDrug.tag}">${currentDrug.name}</span>`;
+    answerNote = `<div class="explanation">Generic: <strong>${currentDrug.name}</strong> | ${currentDrug.note}</div>`;
+  } else if (drillMode === 'generic-to-brand') {
+    correct    = getBrandKeys(currentDrug).some(k => answer.includes(k));
+    tag        = `<span class="category-tag ${currentDrug.tag}">${currentDrug.brand}</span>`;
+    answerNote = `<div class="explanation">Brand: <strong>${currentDrug.brand}</strong> | ${currentDrug.note}</div>`;
+  } else {
+    const keys = (isSingleCategory() && CONDITIONS[currentDrug.name])
+      ? CONDITIONS[currentDrug.name]
+      : currentDrug.keys;
+    correct    = keys.some(kw => answer.includes(kw.toLowerCase()));
+    tag        = `<span class="category-tag ${currentDrug.tag}">${currentDrug.category}</span>`;
+    answerNote = `<div class="explanation">${currentDrug.note}</div>`;
+  }
+
+  // ── Retry mode: wrong on first attempt, must type correctly to advance ──
+  if (needsRetry) {
+    if (correct) {
+      needsRetry    = false;
+      inp.className = 'correct';
+      fb.className  = 'feedback correct';
+      fb.innerHTML  = `✓ Got it! ${tag}${answerNote}`;
+      document.getElementById('hint-area').setAttribute('hidden', '');
+      document.getElementById('check-btn').style.display = 'none';
+      document.getElementById('next-btn').style.display  = 'block';
+    } else {
+      inp.className = 'wrong';
+      setTimeout(() => { inp.value = ''; inp.className = ''; inp.focus(); }, 400);
+    }
+    return;
+  }
+
+  if (answered) return;
+  answered = true;
+  score.total++;
+
+  if (correct && !wasShown) {
+    score.correct++;
+    score.streak++;
+    drugStats[currentDrug.name].correct++;
+    inp.className = 'correct';
+    fb.className  = 'feedback correct';
+    fb.innerHTML  = `✓ Correct! ${tag}${answerNote}`;
+    if (drugStats[currentDrug.name].correct >= 3 && drugStats[currentDrug.name].wrong === 0) {
+      masteredSet.add(currentDrug.name);
+    }
+    updateScore();
+    document.getElementById('show-btn').style.display  = 'none';
+    document.getElementById('check-btn').style.display = 'none';
+    document.getElementById('next-btn').style.display  = 'block';
+
+  } else if (correct && wasShown) {
+    score.streak = 0;
+    drugStats[currentDrug.name].wrong++;
+    drugStats[currentDrug.name].correct = 0;
+    inp.className = 'wrong';
+    fb.className  = 'feedback wrong';
+    fb.innerHTML  = `Answer shown — marked as incorrect. ${tag}${answerNote}`;
+    document.getElementById('hint-area').setAttribute('hidden', '');
+    batchHadError = true;
+    updateScore();
+    document.getElementById('show-btn').style.display  = 'none';
+    document.getElementById('check-btn').style.display = 'none';
+    document.getElementById('next-btn').style.display  = 'block';
+
+  } else {
+    // Wrong — mark score, enter retry mode
+    score.streak = 0;
+    drugStats[currentDrug.name].wrong++;
+    drugStats[currentDrug.name].correct = 0;
+    batchHadError = true;
+    batchQueue.push(currentDrug); // re-add to batch so they see it again
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `✗ Not quite. ${tag}${answerNote}
+                   <div class="retry-prompt">Type the correct answer to continue →</div>`;
+    needsRetry = true;
+    updateScore();
+    document.getElementById('show-btn').style.display  = 'none';
+    document.getElementById('check-btn').style.display = 'none';
+    setTimeout(() => { inp.value = ''; inp.className = ''; inp.focus(); }, 400);
+  }
+}
+
+function updateScore() {
+  document.getElementById('val-correct').textContent  = score.correct;
+  document.getElementById('val-total').textContent    = score.total;
+  document.getElementById('val-streak').textContent   = score.streak;
+  document.getElementById('val-mastered').textContent = masteredSet.size;
+  document.getElementById('progress-text').textContent =
+    `${masteredSet.size} of ${TOTAL} mastered`;
+  document.getElementById('progress-fill').style.width =
+    `${(masteredSet.size / TOTAL * 100).toFixed(1)}%`;
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+document.getElementById('check-btn').addEventListener('click', checkAnswer);
+document.getElementById('next-btn').addEventListener('click', nextDrug);
+
+document.getElementById('show-btn').addEventListener('click', () => {
+  if (answered) return;
+  wasShown = true;
+  const tag = `<span class="category-tag ${currentDrug.tag}">${currentDrug.category}</span>`;
+  const hint = document.getElementById('hint-area');
+  hint.innerHTML = `${tag}<div class="explanation">${currentDrug.note}</div>`;
+  hint.removeAttribute('hidden');
+  document.getElementById('show-btn').style.display = 'none';
+  document.getElementById('answer-input').focus();
+});
+
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (needsRetry) { checkAnswer(); return; }
+  if (!answered) checkAnswer();
+  else nextDrug();
+});
+
+function collapseFilters() {
+  document.getElementById('filters').style.display = 'none';
+  const ftb = document.getElementById('filter-toggle-btn');
+  ftb.textContent = 'Filter by category ▾';
+  ftb.classList.remove('open');
+}
+
+document.getElementById('mode-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  const top = btn.dataset.top;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isNames = top === 'names';
+  document.getElementById('sub-toggle').style.display = isNames ? 'flex' : 'none';
+  document.getElementById('filter-toggle-row').style.display = isNames ? 'flex' : 'none';
+  collapseFilters();
+  if (!isNames) {
+    drillMode = 'category';
+  } else {
+    // use whichever sub-mode is currently active
+    const activeSub = document.querySelector('.sub-btn.active');
+    drillMode = activeSub ? activeSub.dataset.mode : 'brand-to-generic';
+  }
+  wrongQueue = []; completedDrugs = []; batchesDone = 0;
+  buildQueue(); startNewBatch();
+});
+
+document.getElementById('sub-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('.sub-btn');
+  if (!btn) return;
+  document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  drillMode = btn.dataset.mode;
+  collapseFilters();
+  wrongQueue = []; completedDrugs = []; batchesDone = 0;
+  buildQueue(); startNewBatch();
+});
+
+document.getElementById('filter-toggle-btn').addEventListener('click', () => {
+  const filters = document.getElementById('filters');
+  const btn = document.getElementById('filter-toggle-btn');
+  const open = filters.style.display === 'flex';
+  filters.style.display = open ? 'none' : 'flex';
+  btn.textContent = open ? 'Filter by category ▾' : 'Filter by category ▴';
+  btn.classList.toggle('open', !open);
+});
+
+document.getElementById('next-batch-btn').addEventListener('click', () => startNewBatch());
+document.getElementById('review-batch-btn').addEventListener('click', () => startNewBatch(currentBatchDrugs));
+document.getElementById('review-all-btn').addEventListener('click', () => {
+  // Review all completed drugs — treat as a fresh batch but with all covered drugs
+  const saved = currentBatchDrugs;
+  currentBatchDrugs = [...completedDrugs];
+  batchQueue    = [...completedDrugs].sort(() => Math.random() - 0.5);
+  batchHadError = false;
+  document.getElementById('main-card').style.display  = 'block';
+  document.getElementById('batch-panel').style.display = 'none';
+  // After this review, batchComplete will show the panel with currentBatchDrugs = all
+  // We want to restore the last batch as "this batch" after the all-review is done
+  // so we track what "current batch" was
+  nextDrug();
+});
+
+document.getElementById('filters').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  const cat = btn.dataset.cat;
+
+  if (cat === 'all') {
+    activeCategories = new Set(['all']);
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    document.querySelector('.filter-btn[data-cat="all"]').classList.remove('active');
+    activeCategories.delete('all');
+    if (activeCategories.has(cat)) {
+      activeCategories.delete(cat);
+      btn.classList.remove('active');
+    } else {
+      activeCategories.add(cat);
+      btn.classList.add('active');
+    }
+    if (activeCategories.size === 0) {
+      activeCategories.add('all');
+      document.querySelector('.filter-btn[data-cat="all"]').classList.add('active');
+    }
+  }
+
+  wrongQueue = [];
+  completedDrugs = [];
+  batchesDone = 0;
+  buildQueue();
+  startNewBatch();
+});
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+document.getElementById('filters').style.display = 'none';
+buildQueue();
+startNewBatch();
+</script>
+</body>
+</html>
