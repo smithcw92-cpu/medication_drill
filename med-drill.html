@@ -204,9 +204,61 @@
     .bbtn-tertiary  { background: #12151c; border: 1px solid #2a3050; color: #5a6380; font-size: 0.82rem; }
     .bbtn-tertiary:hover { background: #1a1f2e; color: #7a8299; }
 
+    /* ── Sort mode ──────────────────────────────────────────────────────────── */
+    #sort-panel { display: none; max-width: 620px; margin: 0 auto; }
+    .sort-filter-row {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+    }
+    .sort-filter-btn {
+      padding: 5px 12px; border-radius: 20px; border: 1px solid #2a3050;
+      background: #1a1f2e; color: #5a6380; cursor: pointer;
+      font-size: 0.76rem; font-weight: 600; transition: all 0.15s;
+    }
+    .sort-filter-btn:hover { color: #9aa0b8; }
+    .sort-filter-btn.active { background: #2a3050; color: #e8eaf0; border-color: #3a4060; }
+    .sort-filter-btn.all-btn.active { background: #1a3050; border-color: #2a5080; color: #4a9fd4; }
+
+    .sort-drug-card {
+      background: #1a1f2e; border: 1px solid #2a3050; border-radius: 12px;
+      padding: 28px; text-align: center; margin-bottom: 14px;
+    }
+    .sort-drug-name  { font-size: 2rem; font-weight: 800; color: #e8eaf0; margin-bottom: 4px; }
+    .sort-drug-brand { font-size: 1.1rem; color: #6a7390; font-style: italic; }
+    .sort-prompt     { font-size: 0.82rem; color: #5a6380; margin-top: 8px; }
+
+    .sort-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+    }
+    .sort-cat-btn {
+      padding: 10px 8px; border-radius: 8px; border: 1px solid #2a3050;
+      background: #1a1f2e; color: #8a90a8; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; text-align: center;
+      transition: all 0.15s; line-height: 1.3;
+    }
+    .sort-cat-btn:hover:not(:disabled) { background: #232a40; color: #c8cce0; border-color: #3a4060; }
+    .sort-cat-btn.correct { background: #0d2a1a; border-color: #2a6040; color: #4caf7d; }
+    .sort-cat-btn.wrong   { background: #2a1010; border-color: #5a2020; color: #e07070; }
+    .sort-cat-btn:disabled { cursor: default; }
+
+    .sort-feedback {
+      border-radius: 8px; padding: 12px 16px; font-size: 0.85rem;
+      margin-bottom: 12px; display: none; line-height: 1.5;
+    }
+    .sort-feedback.correct { background: #0d2a1a; border: 1px solid #2a6040; color: #4caf7d; display: block; }
+    .sort-feedback.wrong   { background: #2a1010; border: 1px solid #5a2020; color: #e07070; display: block; }
+
+    .sort-next-btn {
+      width: 100%; padding: 11px; background: #1a3a2a;
+      border: 1px solid #2a6040; border-radius: 8px;
+      color: #4caf7d; cursor: pointer; font-size: 0.9rem;
+      font-weight: 600; transition: background 0.15s; display: none;
+    }
+    .sort-next-btn:hover { background: #1f4a32; }
+
     @media (max-width: 480px) {
       .drug-name { font-size: 1.9rem; }
       .main-card { padding: 24px 18px; }
+      .sort-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -225,6 +277,7 @@
   <div class="mode-toggle" id="mode-toggle">
     <button class="mode-btn active" data-top="category">Learn Medications</button>
     <button class="mode-btn" data-top="names">Medication Names</button>
+    <button class="mode-btn" data-top="sort">Medication Sort</button>
   </div>
   <div class="sub-toggle-row" id="sub-toggle">
     <button class="sub-btn active" data-mode="brand-to-generic">Brand → Generic</button>
@@ -272,6 +325,46 @@
     <button class="bbtn" id="next-batch-btn">Next 3 →</button>
     <button class="bbtn" id="review-batch-btn">↩ Review this batch</button>
     <button class="bbtn bbtn-tertiary" id="review-all-btn" style="display:none">Review all covered so far</button>
+  </div>
+</div>
+
+<!-- ── Sort Mode Panel ───────────────────────────────────────────────────── -->
+<div id="sort-panel">
+  <div class="sort-filter-row" id="sort-filters">
+    <button class="sort-filter-btn all-btn active" data-cat="all">All</button>
+    <button class="sort-filter-btn" data-cat="Blood Thinner">🩸 Blood Thinners</button>
+    <button class="sort-filter-btn" data-cat="Antiplatelet">🫀 Antiplatelets</button>
+    <button class="sort-filter-btn" data-cat="Heart / BP">❤️ Heart / BP</button>
+    <button class="sort-filter-btn" data-cat="Diabetes">🩺 Diabetes</button>
+    <button class="sort-filter-btn" data-cat="Psychiatric">🧠 Psychiatric</button>
+    <button class="sort-filter-btn" data-cat="Seizure">⚡ Seizure</button>
+    <button class="sort-filter-btn" data-cat="Respiratory">😮‍💨 Respiratory</button>
+    <button class="sort-filter-btn" data-cat="Pain">💊 Pain</button>
+    <button class="sort-filter-btn" data-cat="Cholesterol">📊 Cholesterol</button>
+    <button class="sort-filter-btn" data-cat="Thyroid">🦋 Thyroid</button>
+    <button class="sort-filter-btn" data-cat="GI">🫃 GI / Stomach</button>
+    <button class="sort-filter-btn" data-cat="Allergy">🤧 Allergy</button>
+  </div>
+
+  <div class="sort-drug-card" id="sort-drug-card">
+    <div class="sort-drug-name"  id="sort-drug-name">—</div>
+    <div class="sort-drug-brand" id="sort-drug-brand"></div>
+    <div class="sort-prompt">Which category does this drug belong to?</div>
+  </div>
+
+  <div class="sort-grid" id="sort-grid"></div>
+  <div class="sort-feedback" id="sort-feedback"></div>
+  <button class="sort-next-btn" id="sort-next-btn">Next →</button>
+
+  <div class="main-card" id="sort-batch-panel" style="display:none">
+    <div class="batch-title" id="sort-batch-title"></div>
+    <div class="batch-perf"  id="sort-batch-perf"></div>
+    <div class="batch-drugs" id="sort-batch-drugs"></div>
+    <div class="batch-options">
+      <button class="bbtn" id="sort-next-batch-btn">Next 3 →</button>
+      <button class="bbtn" id="sort-review-batch-btn">↩ Review this batch</button>
+      <button class="bbtn bbtn-tertiary" id="sort-review-all-btn" style="display:none">Review all medications covered so far</button>
+    </div>
   </div>
 </div>
 
@@ -691,7 +784,7 @@ function batchComplete() {
     title.textContent = 'Review complete!';
     drugs.innerHTML   = '';
   } else {
-    title.textContent = `Batch ${batchesDone} complete!`;
+    title.textContent = 'Batch complete!';
     drugs.innerHTML   = currentBatchDrugs
       .map(d => `<span class="batch-drug-pill">${d.name}</span>`).join('');
   }
@@ -899,6 +992,19 @@ function collapseFilters() {
   ftb.classList.remove('open');
 }
 
+function showDrillUI()  {
+  document.getElementById('main-card').style.display   = 'block';
+  document.getElementById('batch-panel').style.display = 'none';
+  document.getElementById('sort-panel').style.display  = 'none';
+  document.getElementById('progress-area').style.display = 'block';
+}
+function showSortUI() {
+  document.getElementById('main-card').style.display   = 'none';
+  document.getElementById('batch-panel').style.display = 'none';
+  document.getElementById('sort-panel').style.display  = 'block';
+  document.getElementById('progress-area').style.display = 'none';
+}
+
 document.getElementById('mode-toggle').addEventListener('click', e => {
   const btn = e.target.closest('.mode-btn');
   if (!btn) return;
@@ -906,16 +1012,20 @@ document.getElementById('mode-toggle').addEventListener('click', e => {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const isNames = top === 'names';
-  document.getElementById('sub-toggle').style.display = isNames ? 'flex' : 'none';
+  const isSort  = top === 'sort';
+  document.getElementById('sub-toggle').style.display        = isNames ? 'flex' : 'none';
   document.getElementById('filter-toggle-row').style.display = isNames ? 'flex' : 'none';
   collapseFilters();
-  if (!isNames) {
-    drillMode = 'category';
-  } else {
-    // use whichever sub-mode is currently active
-    const activeSub = document.querySelector('.sub-btn.active');
-    drillMode = activeSub ? activeSub.dataset.mode : 'brand-to-generic';
+  if (isSort) {
+    showSortUI();
+    sortBatchesDone = 0; sortCompletedDrugs = [];
+    buildSortQueue(); startSortBatch();
+    return;
   }
+  showDrillUI();
+  drillMode = isNames
+    ? (document.querySelector('.sub-btn.active')?.dataset.mode || 'brand-to-generic')
+    : 'category';
   wrongQueue = []; completedDrugs = []; batchesDone = 0;
   buildQueue(); startNewBatch();
 });
@@ -987,6 +1097,222 @@ document.getElementById('filters').addEventListener('click', e => {
   batchesDone = 0;
   buildQueue();
   startNewBatch();
+});
+
+// ─── Sort Mode ────────────────────────────────────────────────────────────────
+const ALL_CATEGORIES = [
+  { label: '🩸 Blood Thinners', cat: 'Blood Thinner' },
+  { label: '🫀 Antiplatelets',  cat: 'Antiplatelet' },
+  { label: '❤️ Heart / BP',    cat: 'Heart / BP' },
+  { label: '🩺 Diabetes',       cat: 'Diabetes' },
+  { label: '🧠 Psychiatric',    cat: 'Psychiatric' },
+  { label: '⚡ Seizure',        cat: 'Seizure' },
+  { label: '😮‍💨 Respiratory',   cat: 'Respiratory' },
+  { label: '💊 Pain',           cat: 'Pain' },
+  { label: '📊 Cholesterol',    cat: 'Cholesterol' },
+  { label: '🦋 Thyroid',        cat: 'Thyroid' },
+  { label: '🫃 GI / Stomach',   cat: 'GI' },
+  { label: '🤧 Allergy',        cat: 'Allergy' },
+];
+
+let sortCategories     = new Set(['all']);
+let sortQueue          = [];
+let sortCurrentDrug    = null;
+let sortBatchQueue     = [];
+let sortCurrentBatch   = [];
+let sortBatchHadError  = false;
+let sortBatchesDone    = 0;
+let sortCompletedDrugs = [];
+let sortIsReviewAll    = false;
+const sortMastered     = new Set();
+
+function getSortDrugs() {
+  const pool = sortCategories.has('all')
+    ? DRUGS : DRUGS.filter(d => sortCategories.has(d.category));
+  return pool.filter(d => !sortMastered.has(d.name));
+}
+
+function buildSortQueue() {
+  sortQueue = [...getSortDrugs()].sort(() => Math.random() - 0.5);
+}
+
+function startSortBatch(override) {
+  const source = override || sortQueue;
+  sortCurrentBatch = [];
+  while (sortCurrentBatch.length < 3 && source.length > 0) {
+    sortCurrentBatch.push(source.shift());
+  }
+  if (sortCurrentBatch.length === 0) {
+    document.getElementById('sort-drug-card').innerHTML =
+      `<div class="all-done">🎉 All drugs mastered!<br>
+       <button class="bbtn bbtn-primary" style="margin-top:16px" onclick="buildSortQueue();startSortBatch()">↩ Drill Again</button>
+       </div>`;
+    document.getElementById('sort-grid').innerHTML = '';
+    document.getElementById('sort-batch-panel').style.display = 'none';
+    return;
+  }
+  sortBatchQueue   = [...sortCurrentBatch].sort(() => Math.random() - 0.5);
+  sortBatchHadError = false;
+  document.getElementById('sort-batch-panel').style.display = 'none';
+  document.getElementById('sort-drug-card').style.display   = 'block';
+  document.getElementById('sort-grid').style.display        = 'grid';
+  document.getElementById('sort-feedback').style.display    = 'none';
+  document.getElementById('sort-next-btn').style.display    = 'none';
+  nextSortDrug();
+}
+
+function nextSortDrug() {
+  if (sortBatchQueue.length === 0) { sortBatchComplete(); return; }
+  sortCurrentDrug = sortBatchQueue.shift();
+  document.getElementById('sort-drug-name').textContent  = sortCurrentDrug.name;
+  document.getElementById('sort-drug-brand').textContent = sortCurrentDrug.brand ? `(${sortCurrentDrug.brand})` : '';
+  document.getElementById('sort-feedback').style.display = 'none';
+  document.getElementById('sort-next-btn').style.display = 'none';
+  renderSortGrid(false);
+}
+
+function renderSortGrid(answered) {
+  const grid = document.getElementById('sort-grid');
+  const visible = sortCategories.has('all')
+    ? ALL_CATEGORIES
+    : ALL_CATEGORIES.filter(c => sortCategories.has(c.cat));
+  grid.innerHTML = visible.map(c =>
+    `<button class="sort-cat-btn" data-cat="${c.cat}" ${answered ? 'disabled' : ''}>${c.label}</button>`
+  ).join('');
+}
+
+document.getElementById('sort-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.sort-cat-btn');
+  if (!btn || btn.disabled) return;
+  const chosen  = btn.dataset.cat;
+  const correct = sortCurrentDrug.category;
+  const isRight = chosen === correct;
+
+  if (isRight) {
+    // disable all
+    document.querySelectorAll('.sort-cat-btn').forEach(b => b.disabled = true);
+    btn.classList.add('correct');
+    document.getElementById('sort-feedback').className = 'sort-feedback correct';
+    document.getElementById('sort-feedback').textContent = `✓ Correct! ${sortCurrentDrug.name} is a ${correct}.`;
+    document.getElementById('sort-feedback').style.display = 'block';
+    setTimeout(() => nextSortDrug(), 900);
+  } else {
+    // disable all except the correct one
+    document.querySelectorAll('.sort-cat-btn').forEach(b => {
+      if (b.dataset.cat === correct) {
+        b.classList.add('correct');
+      } else {
+        b.disabled = true;
+        if (b.dataset.cat === chosen) b.classList.add('wrong');
+      }
+    });
+    sortBatchHadError = true;
+    sortBatchQueue.push(sortCurrentDrug);
+    document.getElementById('sort-feedback').className = 'sort-feedback wrong';
+    document.getElementById('sort-feedback').textContent =
+      `✗ ${sortCurrentDrug.name} is a ${correct}, not ${chosen}. Click the correct category to continue.`;
+    document.getElementById('sort-feedback').style.display = 'block';
+  }
+});
+
+document.getElementById('sort-next-btn').addEventListener('click', nextSortDrug);
+
+function sortBatchComplete() {
+  sortBatchesDone++;
+  sortCompletedDrugs.push(...sortCurrentBatch);
+  sortCurrentBatch.forEach(d => sortMastered.add(d.name));
+
+  const title    = document.getElementById('sort-batch-title');
+  const perf     = document.getElementById('sort-batch-perf');
+  const drugs    = document.getElementById('sort-batch-drugs');
+  const nextBtn  = document.getElementById('sort-next-batch-btn');
+  const revBtn   = document.getElementById('sort-review-batch-btn');
+  const allBtn   = document.getElementById('sort-review-all-btn');
+
+  if (sortIsReviewAll) {
+    title.textContent = 'Review complete!';
+    drugs.innerHTML   = '';
+  } else {
+    title.textContent = 'Batch complete!';
+    drugs.innerHTML   = sortCurrentBatch
+      .map(d => `<span class="batch-drug-pill">${d.name}</span>`).join('');
+  }
+  sortIsReviewAll  = false;
+  title.className  = 'batch-title ' + (sortBatchHadError ? 'retry' : 'clean');
+  perf.textContent = sortBatchHadError
+    ? 'Some needed a retry — keep drilling!'
+    : 'All correct first try!';
+
+  if (sortBatchHadError) {
+    revBtn.className = 'bbtn bbtn-primary';
+    nextBtn.className = 'bbtn bbtn-secondary';
+  } else {
+    nextBtn.className = 'bbtn bbtn-primary';
+    revBtn.className  = 'bbtn bbtn-secondary';
+  }
+
+  if (sortBatchesDone >= 2) {
+    allBtn.style.display = 'block';
+  } else {
+    allBtn.style.display = 'none';
+  }
+
+  document.getElementById('sort-drug-card').style.display   = 'none';
+  document.getElementById('sort-grid').style.display        = 'none';
+  document.getElementById('sort-feedback').style.display    = 'none';
+  document.getElementById('sort-next-btn').style.display    = 'none';
+  document.getElementById('sort-batch-panel').style.display = 'block';
+}
+
+document.getElementById('sort-next-batch-btn').addEventListener('click', () => {
+  document.getElementById('sort-drug-card').style.display = 'block';
+  document.getElementById('sort-grid').style.display      = 'grid';
+  buildSortQueue(); startSortBatch();
+});
+document.getElementById('sort-review-batch-btn').addEventListener('click', () => {
+  document.getElementById('sort-drug-card').style.display = 'block';
+  document.getElementById('sort-grid').style.display      = 'grid';
+  const retry = [...sortCurrentBatch];
+  startSortBatch(retry);
+});
+document.getElementById('sort-review-all-btn').addEventListener('click', () => {
+  sortIsReviewAll  = true;
+  sortCurrentBatch = [...sortCompletedDrugs];
+  const all = [...sortCompletedDrugs].sort(() => Math.random() - 0.5);
+  document.getElementById('sort-drug-card').style.display = 'block';
+  document.getElementById('sort-grid').style.display      = 'grid';
+  document.getElementById('sort-batch-panel').style.display = 'none';
+  sortBatchQueue    = all;
+  sortBatchHadError = false;
+  nextSortDrug();
+});
+
+// Sort filter pills
+document.getElementById('sort-filters').addEventListener('click', e => {
+  const btn = e.target.closest('.sort-filter-btn');
+  if (!btn) return;
+  const cat = btn.dataset.cat;
+  if (cat === 'all') {
+    sortCategories = new Set(['all']);
+    document.querySelectorAll('.sort-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    document.querySelector('.sort-filter-btn[data-cat="all"]').classList.remove('active');
+    if (sortCategories.has(cat)) {
+      sortCategories.delete(cat);
+      btn.classList.remove('active');
+    } else {
+      sortCategories.add(cat);
+      btn.classList.add('active');
+      sortCategories.delete('all');
+    }
+    if (sortCategories.size === 0) {
+      sortCategories = new Set(['all']);
+      document.querySelector('.sort-filter-btn[data-cat="all"]').classList.add('active');
+    }
+  }
+  sortBatchesDone = 0; sortCompletedDrugs = [];
+  buildSortQueue(); startSortBatch();
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
