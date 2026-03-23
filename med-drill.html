@@ -164,6 +164,24 @@
     .cat-thy  { background: #10102a; color: #8888d4; border: 1px solid #303060; }
     .cat-gi   { background: #1a1a1a; color: #9090b4; border: 1px solid #383848; }
     .cat-all  { background: #2a1515; color: #d47878; border: 1px solid #5a2828; }
+    .cat-crd  { background: #2a0808; color: #ff6b6b; border: 1px solid #6a1818; }
+    .cat-ana  { background: #1a0a2a; color: #c084fc; border: 1px solid #4a1a6a; }
+    .cat-rsi  { background: #08181a; color: #22d3ee; border: 1px solid #0e4a54; }
+    .cat-tox  { background: #0a2010; color: #4ade80; border: 1px solid #1a5a2a; }
+    .cat-hem  { background: #1a0818; color: #f472b6; border: 1px solid #5a1848; }
+
+    .nw-protocol-toggle {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .nw-btn {
+      padding: 6px 16px; border-radius: 6px; border: 2px solid #2a5080;
+      background: #0a1520; color: #4a9fd4; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .nw-btn:hover { border-color: #4a9fd4; color: #7abfe8; }
+    .nw-btn.active { background: #1a3a5a; border-color: #4a9fd4; color: #e8f4ff; }
 
     .btn-show {
       width: 100%; padding: 8px; background: #12151c;
@@ -273,6 +291,9 @@
   </div>
 </header>
 
+<div class="nw-protocol-toggle">
+  <button class="nw-btn" id="nw-btn">🚑 NW Protocol Only</button>
+</div>
 <div class="mode-toggle-wrapper">
   <div class="mode-toggle" id="mode-toggle">
     <button class="mode-btn active" data-top="category">Learn Medications</button>
@@ -300,6 +321,11 @@
     <button class="filter-btn" data-cat="Thyroid">🦋 Thyroid</button>
     <button class="filter-btn" data-cat="GI">🫃 GI / Stomach</button>
     <button class="filter-btn" data-cat="Allergy">🤧 Allergy</button>
+    <button class="filter-btn" data-cat="Cardiac / Arrest">🚨 Cardiac / Arrest</button>
+    <button class="filter-btn" data-cat="Analgesics">💊 Analgesics</button>
+    <button class="filter-btn" data-cat="Sedation / RSI">😴 Sedation / RSI</button>
+    <button class="filter-btn" data-cat="Tox / Metabolic">🧪 Tox / Metabolic</button>
+    <button class="filter-btn" data-cat="Hemostasis / OB">🩸 Hemostasis / OB</button>
   </div>
 </div>
 
@@ -344,6 +370,11 @@
     <button class="sort-filter-btn" data-cat="Thyroid">🦋 Thyroid</button>
     <button class="sort-filter-btn" data-cat="GI">🫃 GI / Stomach</button>
     <button class="sort-filter-btn" data-cat="Allergy">🤧 Allergy</button>
+    <button class="sort-filter-btn" data-cat="Cardiac / Arrest">🚨 Cardiac / Arrest</button>
+    <button class="sort-filter-btn" data-cat="Analgesics">💊 Analgesics</button>
+    <button class="sort-filter-btn" data-cat="Sedation / RSI">😴 Sedation / RSI</button>
+    <button class="sort-filter-btn" data-cat="Tox / Metabolic">🧪 Tox / Metabolic</button>
+    <button class="sort-filter-btn" data-cat="Hemostasis / OB">🩸 Hemostasis / OB</button>
   </div>
 
   <div class="sort-drug-card" id="sort-drug-card">
@@ -618,9 +649,163 @@ const DRUGS = [
   { name:"Loratadine",      brand:"Claritin",              category:"Allergy",       tag:"cat-all",
     keys:["allergy","antihistamine","histamine","allergic"],
     note:"Non-drowsy antihistamine — treats seasonal and perennial allergies." },
+
+  // ── Heart / BP additions ──────────────────────────────────────────────────
+  { name:"Labetalol",       brand:"Trandate / Normodyne",  category:"Heart / BP",    tag:"cat-hbp",
+    keys:["blood pressure","hypertension","alpha","beta","blocker"],
+    note:"Alpha+beta blocker. For hypertensive emergencies. IV use in EMS." },
+  { name:"Lidocaine",       brand:"Xylocaine",             category:"Heart / BP",    tag:"cat-hbp",
+    keys:["arrhythmia","antiarrhythmic","ventricular","tachycardia","rhythm"],
+    note:"Class 1b antiarrhythmic. Also used for pain management and RSI pre-treatment." },
+  { name:"Procainamide",    brand:"Pronestyl",             category:"Heart / BP",    tag:"cat-hbp",
+    keys:["arrhythmia","antiarrhythmic","ventricular","tachycardia","rhythm"],
+    note:"Class 1a antiarrhythmic. For sustained VT with a pulse." },
+  { name:"Bumetanide",      brand:"Bumex",                 category:"Heart / BP",    tag:"cat-hbp",
+    keys:["diuretic","fluid","edema","pulmonary","loop"],
+    note:"Loop diuretic — faster acting than furosemide. Used for pulmonary edema." },
+  { name:"Magnesium Sulfate",brand:"MgSO4",                category:"Heart / BP",    tag:"cat-hbp",
+    keys:["torsades","eclampsia","magnesium","electrolyte","pre-eclampsia"],
+    note:"For torsades de pointes, pre-eclampsia, and eclampsia." },
+
+  // ── Respiratory additions ─────────────────────────────────────────────────
+  { name:"Ipratropium",     brand:"Atrovent / Ipramide",   category:"Respiratory",   tag:"cat-res",
+    keys:["bronchospasm","copd","bronchodilator","anticholinergic","nebulizer"],
+    note:"Anticholinergic bronchodilator. Often combined with albuterol for COPD/asthma." },
+  { name:"Methylprednisolone",brand:"Solu-Medrol",         category:"Respiratory",   tag:"cat-res",
+    keys:["steroid","corticosteroid","asthma","copd","anaphylaxis","anti-inflammatory"],
+    note:"IV corticosteroid. For allergic reactions, anaphylaxis, and reactive airway." },
+  { name:"Oxymetazoline",   brand:"Afrin",                 category:"Respiratory",   tag:"cat-res",
+    keys:["nasal","decongestant","epistaxis","nose","congestion"],
+    note:"Nasal decongestant. Pre-treatment for nasal intubation and epistaxis." },
+  { name:"Dexamethasone",   brand:"Decadron",              category:"Respiratory",   tag:"cat-res",
+    keys:["steroid","corticosteroid","croup","airway","anti-inflammatory","swelling"],
+    note:"Long-acting corticosteroid. Croup, airway edema, anaphylaxis." },
+
+  // ── GI additions ──────────────────────────────────────────────────────────
+  { name:"Promethazine",    brand:"Phenergan",             category:"GI / Stomach",  tag:"cat-gi",
+    keys:["nausea","vomiting","antiemetic","antinausea"],
+    note:"Antiemetic and sedative. Must be diluted before IV administration." },
+  { name:"Famotidine",      brand:"Pepcid",                category:"GI / Stomach",  tag:"cat-gi",
+    keys:["acid","antacid","h2","blocker","ulcer","heartburn","stomach"],
+    note:"H2 blocker — reduces stomach acid. IV form used in anaphylaxis protocols." },
+
+  // ── Pain additions ────────────────────────────────────────────────────────
+  { name:"Acetaminophen",   brand:"Tylenol / Ofirmev",     category:"Pain",          tag:"cat-pai",
+    keys:["pain","fever","antipyretic","analgesic","non-opioid"],
+    note:"Non-opioid analgesic/antipyretic. IV form (Ofirmev) used in hospital setting." },
+
+  // ── Blood Thinner additions ───────────────────────────────────────────────
+  { name:"Heparin",         brand:"Hep-Lock",              category:"Blood Thinner", tag:"cat-bt",
+    keys:["anticoagulant","clot","dvt","blood thinner","coagulation","acs"],
+    note:"Anticoagulant. Used for ACS, DVT/PE prevention. Requires lab monitoring." },
+
+  // ── Cardiac / Arrest (new category) ──────────────────────────────────────
+  { name:"Epinephrine",     brand:"Adrenaline / EpiPen",   category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["cardiac arrest","anaphylaxis","vasopressor","bronchospasm","resuscitation","epi"],
+    note:"First-line for cardiac arrest (1:10,000) and anaphylaxis (1:1,000 IM)." },
+  { name:"Adenosine",       brand:"Adenocard",             category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["svt","supraventricular","tachycardia","rhythm","antiarrhythmic"],
+    note:"Slows AV node conduction. First-line for SVT. Extremely short acting." },
+  { name:"Atropine",        brand:"Atreza",                category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["bradycardia","anticholinergic","heart rate","slow","asystole"],
+    note:"Increases heart rate. For symptomatic bradycardia and organophosphate poisoning." },
+  { name:"Calcium Chloride",brand:"CaCl2",                 category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["hyperkalemia","calcium channel","blocker","overdose","electrolyte","cardiac"],
+    note:"For hyperkalemia, calcium channel blocker overdose, and cardiac arrest." },
+  { name:"Sodium Bicarbonate",brand:"Bicarb / NaHCO3",    category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["acidosis","tricyclic","tca","overdose","alkalinize","bicarb"],
+    note:"Buffers metabolic acidosis. TCA overdose, hyperkalemia, prolonged arrest." },
+  { name:"Norepinephrine",  brand:"Levophed",              category:"Cardiac / Arrest", tag:"cat-crd",
+    keys:["vasopressor","hypotension","shock","sepsis","pressor","norepinephrine"],
+    note:"Potent vasopressor. First-line for septic and neurogenic shock." },
+
+  // ── Analgesics (new category) ─────────────────────────────────────────────
+  { name:"Morphine",        brand:"MS Contin / Roxanol",   category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","opioid","narcotic","analgesic","opiate"],
+    note:"Opioid analgesic. Also reduces preload in pulmonary edema." },
+  { name:"Fentanyl",        brand:"Sublimaze / Duragesic", category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","opioid","narcotic","analgesic","synthetic opioid"],
+    note:"Synthetic opioid ~100x more potent than morphine. Fast acting." },
+  { name:"Hydromorphone",   brand:"Dilaudid",              category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","opioid","narcotic","analgesic","opiate"],
+    note:"Opioid 5-7x more potent than morphine. Used IV in EMS." },
+  { name:"Ketamine",        brand:"Ketalar",               category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","dissociative","analgesia","sedation","rsi","ketamine"],
+    note:"Dissociative anesthetic. Used for pain management, RSI, and chemical restraint." },
+  { name:"Ketorolac",       brand:"Toradol",               category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","nsaid","non-opioid","analgesic","anti-inflammatory"],
+    note:"NSAID analgesic given IV/IM. Useful opioid-free pain management." },
+  { name:"Nitrous Oxide",   brand:"N2O / Nitronox",        category:"Analgesics",    tag:"cat-ana",
+    keys:["pain","inhaled","gas","analgesia","anxiolytic","nitrous"],
+    note:"Inhaled 50/50 O2 mix. Self-administered analgesic/anxiolytic." },
+
+  // ── Sedation / RSI (new category) ────────────────────────────────────────
+  { name:"Etomidate",       brand:"Amidate",               category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["induction","intubation","rsi","sedation","hypnotic"],
+    note:"Induction agent for RSI. Minimal cardiovascular effects. Do not re-dose." },
+  { name:"Midazolam",       brand:"Versed",                category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["sedation","seizure","benzodiazepine","rsi","anxiolytic","benzo"],
+    note:"Benzodiazepine for sedation, seizures, and RSI. Can be given IN/IV/IM." },
+  { name:"Diazepam",        brand:"Valium",                category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["seizure","sedation","benzodiazepine","anxiety","muscle relaxant","benzo"],
+    note:"Benzodiazepine. Seizures, sedation, muscle spasm, alcohol withdrawal." },
+  { name:"Succinylcholine", brand:"Anectine",              category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["paralytic","neuromuscular","rsi","intubation","depolarizing","succs"],
+    note:"Depolarizing paralytic for RSI. Ultra-short acting. Contraindicated in hyperkalemia." },
+  { name:"Rocuronium",      brand:"Zemuron",               category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["paralytic","neuromuscular","rsi","intubation","nondepolarizing"],
+    note:"Non-depolarizing paralytic for RSI. Longer acting than succinylcholine." },
+  { name:"Vecuronium",      brand:"Norcuron",              category:"Sedation / RSI",tag:"cat-rsi",
+    keys:["paralytic","neuromuscular","maintenance","intubation","nondepolarizing"],
+    note:"Non-depolarizing paralytic for post-intubation maintenance paralysis." },
+
+  // ── Tox / Metabolic (new category) ───────────────────────────────────────
+  { name:"Naloxone",        brand:"Narcan",                category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["opioid","reversal","overdose","antidote","narcan"],
+    note:"Opioid antagonist. Reverses opioid OD. Short acting — may need re-dosing." },
+  { name:"Dextrose (D50W)", brand:"D50W / D25W",           category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["glucose","hypoglycemia","sugar","dextrose","blood sugar"],
+    note:"50% dextrose. For hypoglycemia. Dilute to D25 for pediatric patients." },
+  { name:"Glucose Oral",    brand:"Glucose Paste / Insta-Glucose", category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["glucose","hypoglycemia","sugar","oral","blood sugar"],
+    note:"Oral glucose for conscious hypoglycemic patients. EMT scope." },
+  { name:"Thiamine",        brand:"Vitamin B1 / Betalin",  category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["thiamine","vitamin","alcohol","wernicke","b1","deficiency"],
+    note:"Vitamin B1. Give before dextrose in suspected alcohol use or malnutrition." },
+  { name:"Glucagon",        brand:"GlucaGen / Baqsimi",    category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["hypoglycemia","glucose","beta blocker","calcium channel","antidote"],
+    note:"Raises blood sugar. Also reverses beta-blocker/calcium channel blocker OD." },
+  { name:"Activated Charcoal",brand:"Actidose-Aqua / Insta-Char", category:"Tox / Metabolic",tag:"cat-tox",
+    keys:["overdose","ingestion","poison","charcoal","adsorb","toxin"],
+    note:"Binds ingested toxins. Most effective within 30 minutes of ingestion." },
+
+  // ── Hemostasis / OB (new category) ───────────────────────────────────────
+  { name:"Tranexamic Acid", brand:"TXA / Cyclokapron",     category:"Hemostasis / OB",tag:"cat-hem",
+    keys:["txa","bleeding","hemorrhage","antifibrinolytic","trauma","clot"],
+    note:"Antifibrinolytic. For traumatic hemorrhage. Most effective within 3 hrs of injury." },
+  { name:"Oxytocin",        brand:"Pitocin",               category:"Hemostasis / OB",tag:"cat-hem",
+    keys:["uterine","hemorrhage","ob","postpartum","labor","bleeding"],
+    note:"Uterotonic. Controls post-delivery hemorrhage by stimulating uterine contractions." },
 ];
 
 const TOTAL = DRUGS.length;
+
+// ─── Northwest Protocol drug set ──────────────────────────────────────────
+const NW_PROTOCOL = new Set([
+  // Existing drugs in protocol
+  "Aspirin (81mg)", "Ticagrelor", "Albuterol", "Amiodarone", "Nitroglycerin",
+  "Diltiazem", "Furosemide", "Metoprolol", "Lorazepam", "Prednisone",
+  "Ondansetron", "Diphenhydramine",
+  // New drugs added from formulary
+  "Labetalol", "Lidocaine", "Procainamide", "Bumetanide", "Magnesium Sulfate",
+  "Ipratropium", "Methylprednisolone", "Oxymetazoline", "Dexamethasone",
+  "Promethazine", "Famotidine", "Acetaminophen", "Heparin",
+  "Epinephrine", "Adenosine", "Atropine", "Calcium Chloride", "Sodium Bicarbonate", "Norepinephrine",
+  "Morphine", "Fentanyl", "Hydromorphone", "Ketamine", "Ketorolac", "Nitrous Oxide",
+  "Etomidate", "Midazolam", "Diazepam", "Succinylcholine", "Rocuronium", "Vecuronium",
+  "Naloxone", "Dextrose (D50W)", "Glucose Oral", "Thiamine", "Glucagon", "Activated Charcoal",
+  "Tranexamic Acid", "Oxytocin",
+]);
 
 // ─── Specific conditions (used in single-category drill mode) ─────────────────
 const CONDITIONS = {
@@ -708,16 +893,18 @@ let drillMode        = 'category'; // 'category' | 'brand-to-generic' | 'generic
 let activeCategories = new Set(['all']);
 let queue      = [];
 let wrongQueue = [];
+let nwProtocolActive = false;
 
 function isSingleCategory() {
   return !activeCategories.has('all') && activeCategories.size === 1;
 }
 function getGenericKeys(drug) {
   return drug.name.replace(/\(.*?\)/g,'').trim().toLowerCase()
-    .split(/\s+/).filter(w => w.length > 3);
+    .split(/\s+/).filter(w => w.length > 2);
 }
 function getBrandKeys(drug) {
-  return drug.brand.split('/').map(b => b.trim().toLowerCase()).filter(b => b.length > 2);
+  return drug.brand.toLowerCase().split(/[\/\s]+/)
+    .map(b => b.trim()).filter(b => b.length > 2);
 }
 let currentDrug       = null;
 let answered          = false;
@@ -734,9 +921,9 @@ let completedDrugs    = [];   // all drugs from all completed batches
 
 // ─── Queue helpers ────────────────────────────────────────────────────────────
 function getActiveDrugs() {
-  if (activeCategories.has('all'))
-    return DRUGS.filter(d => !masteredSet.has(d.name));
-  return DRUGS.filter(d => activeCategories.has(d.category) && !masteredSet.has(d.name));
+  let pool = activeCategories.has('all') ? DRUGS : DRUGS.filter(d => activeCategories.has(d.category));
+  if (nwProtocolActive) pool = pool.filter(d => NW_PROTOCOL.has(d.name));
+  return pool.filter(d => !masteredSet.has(d.name));
 }
 
 function buildQueue() {
@@ -985,6 +1172,17 @@ document.getElementById('answer-input').addEventListener('keydown', e => {
   else nextDrug();
 });
 
+// ─── NW Protocol toggle ───────────────────────────────────────────────────────
+document.getElementById('nw-btn').addEventListener('click', () => {
+  nwProtocolActive = !nwProtocolActive;
+  document.getElementById('nw-btn').classList.toggle('active', nwProtocolActive);
+  // Reset all modes
+  wrongQueue = []; completedDrugs = []; batchesDone = 0;
+  buildQueue(); startNewBatch();
+  sortMastered.clear(); sortBatchesDone = 0; sortCompletedDrugs = [];
+  buildSortQueue(); startSortBatch();
+});
+
 function collapseFilters() {
   document.getElementById('filters').style.display = 'none';
   const ftb = document.getElementById('filter-toggle-btn');
@@ -1101,18 +1299,23 @@ document.getElementById('filters').addEventListener('click', e => {
 
 // ─── Sort Mode ────────────────────────────────────────────────────────────────
 const ALL_CATEGORIES = [
-  { label: '🩸 Blood Thinners', cat: 'Blood Thinner' },
-  { label: '🫀 Antiplatelets',  cat: 'Antiplatelet' },
-  { label: '❤️ Heart / BP',    cat: 'Heart / BP' },
-  { label: '🩺 Diabetes',       cat: 'Diabetes' },
-  { label: '🧠 Psychiatric',    cat: 'Psychiatric' },
-  { label: '⚡ Seizure',        cat: 'Seizure' },
-  { label: '😮‍💨 Respiratory',   cat: 'Respiratory' },
-  { label: '💊 Pain',           cat: 'Pain' },
-  { label: '📊 Cholesterol',    cat: 'Cholesterol' },
-  { label: '🦋 Thyroid',        cat: 'Thyroid' },
-  { label: '🫃 GI / Stomach',   cat: 'GI' },
-  { label: '🤧 Allergy',        cat: 'Allergy' },
+  { label: '🩸 Blood Thinners',  cat: 'Blood Thinner' },
+  { label: '🫀 Antiplatelets',   cat: 'Antiplatelet' },
+  { label: '❤️ Heart / BP',     cat: 'Heart / BP' },
+  { label: '🩺 Diabetes',        cat: 'Diabetes' },
+  { label: '🧠 Psychiatric',     cat: 'Psychiatric' },
+  { label: '⚡ Seizure',         cat: 'Seizure' },
+  { label: '😮‍💨 Respiratory',    cat: 'Respiratory' },
+  { label: '💊 Pain',            cat: 'Pain' },
+  { label: '📊 Cholesterol',     cat: 'Cholesterol' },
+  { label: '🦋 Thyroid',         cat: 'Thyroid' },
+  { label: '🫃 GI / Stomach',    cat: 'GI / Stomach' },
+  { label: '🤧 Allergy',         cat: 'Allergy' },
+  { label: '🚨 Cardiac / Arrest',cat: 'Cardiac / Arrest' },
+  { label: '💊 Analgesics',      cat: 'Analgesics' },
+  { label: '😴 Sedation / RSI',  cat: 'Sedation / RSI' },
+  { label: '🧪 Tox / Metabolic', cat: 'Tox / Metabolic' },
+  { label: '🩸 Hemostasis / OB', cat: 'Hemostasis / OB' },
 ];
 
 let sortCategories     = new Set(['all']);
@@ -1127,8 +1330,8 @@ let sortIsReviewAll    = false;
 const sortMastered     = new Set();
 
 function getSortDrugs() {
-  const pool = sortCategories.has('all')
-    ? DRUGS : DRUGS.filter(d => sortCategories.has(d.category));
+  let pool = sortCategories.has('all') ? DRUGS : DRUGS.filter(d => sortCategories.has(d.category));
+  if (nwProtocolActive) pool = pool.filter(d => NW_PROTOCOL.has(d.name));
   return pool.filter(d => !sortMastered.has(d.name));
 }
 
