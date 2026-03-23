@@ -1018,7 +1018,7 @@ document.getElementById('mode-toggle').addEventListener('click', e => {
   collapseFilters();
   if (isSort) {
     showSortUI();
-    sortBatchesDone = 0; sortCompletedDrugs = [];
+    sortMastered.clear(); sortBatchesDone = 0; sortCompletedDrugs = [];
     buildSortQueue(); startSortBatch();
     return;
   }
@@ -1145,14 +1145,28 @@ function startSortBatch(override) {
   if (sortCurrentBatch.length === 0) {
     document.getElementById('sort-drug-card').innerHTML =
       `<div class="all-done">🎉 All drugs mastered!<br>
-       <button class="bbtn bbtn-primary" style="margin-top:16px" onclick="buildSortQueue();startSortBatch()">↩ Drill Again</button>
+       <button class="bbtn bbtn-primary" id="sort-drill-again-btn" style="margin-top:16px">↩ Drill Again</button>
        </div>`;
+    document.getElementById('sort-drug-card').style.display = 'block';
     document.getElementById('sort-grid').innerHTML = '';
+    document.getElementById('sort-grid').style.display = 'none';
     document.getElementById('sort-batch-panel').style.display = 'none';
+    document.getElementById('sort-drill-again-btn').addEventListener('click', () => {
+      sortMastered.clear();
+      sortBatchesDone = 0;
+      sortCompletedDrugs = [];
+      buildSortQueue();
+      startSortBatch();
+    });
     return;
   }
   sortBatchQueue   = [...sortCurrentBatch].sort(() => Math.random() - 0.5);
   sortBatchHadError = false;
+  // Restore card inner HTML in case it was replaced by the all-done screen
+  document.getElementById('sort-drug-card').innerHTML =
+    `<div class="sort-drug-name" id="sort-drug-name">—</div>
+     <div class="sort-drug-brand" id="sort-drug-brand"></div>
+     <div class="sort-prompt">Which category does this drug belong to?</div>`;
   document.getElementById('sort-batch-panel').style.display = 'none';
   document.getElementById('sort-drug-card').style.display   = 'block';
   document.getElementById('sort-grid').style.display        = 'grid';
@@ -1219,7 +1233,9 @@ document.getElementById('sort-next-btn').addEventListener('click', nextSortDrug)
 
 function sortBatchComplete() {
   sortBatchesDone++;
-  sortCompletedDrugs.push(...sortCurrentBatch);
+  // Add only drugs not already tracked (prevents duplicates from repeated batches)
+  const seenNames = new Set(sortCompletedDrugs.map(d => d.name));
+  sortCurrentBatch.forEach(d => { if (!seenNames.has(d.name)) sortCompletedDrugs.push(d); });
   sortCurrentBatch.forEach(d => sortMastered.add(d.name));
 
   const title    = document.getElementById('sort-batch-title');
@@ -1278,11 +1294,17 @@ document.getElementById('sort-review-batch-btn').addEventListener('click', () =>
 document.getElementById('sort-review-all-btn').addEventListener('click', () => {
   sortIsReviewAll  = true;
   sortCurrentBatch = [...sortCompletedDrugs];
-  const all = [...sortCompletedDrugs].sort(() => Math.random() - 0.5);
-  document.getElementById('sort-drug-card').style.display = 'block';
-  document.getElementById('sort-grid').style.display      = 'grid';
+  // Restore card HTML so sort-drug-name / sort-drug-brand elements exist
+  document.getElementById('sort-drug-card').innerHTML =
+    `<div class="sort-drug-name" id="sort-drug-name">—</div>
+     <div class="sort-drug-brand" id="sort-drug-brand"></div>
+     <div class="sort-prompt">Which category does this drug belong to?</div>`;
+  document.getElementById('sort-drug-card').style.display   = 'block';
+  document.getElementById('sort-grid').style.display        = 'grid';
+  document.getElementById('sort-feedback').style.display    = 'none';
+  document.getElementById('sort-next-btn').style.display    = 'none';
   document.getElementById('sort-batch-panel').style.display = 'none';
-  sortBatchQueue    = all;
+  sortBatchQueue    = [...sortCompletedDrugs].sort(() => Math.random() - 0.5);
   sortBatchHadError = false;
   nextSortDrug();
 });
