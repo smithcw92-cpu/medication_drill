@@ -1176,11 +1176,14 @@ document.getElementById('answer-input').addEventListener('keydown', e => {
 document.getElementById('nw-btn').addEventListener('click', () => {
   nwProtocolActive = !nwProtocolActive;
   document.getElementById('nw-btn').classList.toggle('active', nwProtocolActive);
-  // Reset all modes
-  wrongQueue = []; completedDrugs = []; batchesDone = 0;
-  buildQueue(); startNewBatch();
-  sortMastered.clear(); sortBatchesDone = 0; sortCompletedDrugs = [];
-  buildSortQueue(); startSortBatch();
+  const activeTop = document.querySelector('.mode-btn.active')?.dataset.top;
+  if (activeTop === 'sort') {
+    sortMastered.clear(); sortBatchesDone = 0; sortCompletedDrugs = [];
+    buildSortQueue(); startSortBatch();
+  } else {
+    wrongQueue = []; completedDrugs = []; batchesDone = 0;
+    buildQueue(); startNewBatch();
+  }
 });
 
 function collapseFilters() {
