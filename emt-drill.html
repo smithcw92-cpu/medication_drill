@@ -521,6 +521,7 @@ header h1 {
   <button class="mode-btn" data-mode="dose">Dose</button>
   <button class="mode-btn" data-mode="indications">Indications</button>
   <button class="mode-btn" data-mode="contraindications">Contraindications</button>
+  <button class="mode-btn" data-mode="names">Names</button>
   <button class="mode-btn" data-mode="drugid">Drug ID</button>
 </div>
 
@@ -715,7 +716,7 @@ const EMT_DRUGS = [
 // ──────────────────────────────────────────────────────────────
 //  STATE
 // ──────────────────────────────────────────────────────────────
-let activeMode = 'all';   // all | dose | indications | contraindications | drugid
+let activeMode = 'all';   // all | dose | indications | contraindications | names | drugid
 let queue      = [];      // [{drug, type}]
 let current    = null;    // {drug, type}
 let attempts   = 0;
@@ -735,11 +736,21 @@ function shuffle(arr) {
   return arr;
 }
 
+function getGenericKeys(drug) {
+  return drug.name.toLowerCase().replace(/[()]/g, '').split(/[\s\/]+/).filter(w => w.length > 2);
+}
+
+function getBrandKeys(drug) {
+  return drug.brand.toLowerCase().split(/[\s\/]+/).map(w => w.trim()).filter(w => w.length > 2);
+}
+
 function buildQueue() {
   const types = activeMode === 'all'
     ? ['dose', 'indications', 'contraindications']
     : activeMode === 'drugid'
     ? ['drugid']
+    : activeMode === 'names'
+    ? ['brand-to-generic', 'generic-to-brand']
     : [activeMode];
 
   queue = [];
@@ -759,6 +770,8 @@ function keysForCard(card) {
   if (type === 'indications')      return drug.indicationKeys;
   if (type === 'contraindications')return drug.contraindicationKeys;
   if (type === 'drugid')           return drug.nameKeys;
+  if (type === 'brand-to-generic') return getGenericKeys(drug);
+  if (type === 'generic-to-brand') return getBrandKeys(drug);
   return [];
 }
 
@@ -768,6 +781,8 @@ function fullAnswerFor(card) {
   if (type === 'indications')      return { label: 'Indications', text: drug.indications };
   if (type === 'contraindications')return { label: 'Contraindications', text: drug.contraindications };
   if (type === 'drugid')           return { label: 'Drug', text: `${drug.name} (${drug.brand})` };
+  if (type === 'brand-to-generic') return { label: 'Generic Name', text: drug.name };
+  if (type === 'generic-to-brand') return { label: 'Brand Name', text: drug.brand };
   return { label: '', text: '' };
 }
 
@@ -777,6 +792,8 @@ function questionLabelFor(card) {
   if (type === 'indications')      return '✅ What are the indications?';
   if (type === 'contraindications')return '⛔ What are the contraindications?';
   if (type === 'drugid')           return '🔍 Name this drug';
+  if (type === 'brand-to-generic') return '💊 What is the generic name?';
+  if (type === 'generic-to-brand') return '🏷️ What is the brand name?';
   return '';
 }
 
@@ -821,10 +838,22 @@ function renderCard() {
   const { drug, type } = current;
 
   // Drug name / indication prompt
+  const promptEl = document.querySelector('#indication-prompt strong');
   if (type === 'drugid') {
     nameDisplay.style.display = 'none';
     indicationProm.style.display = 'block';
+    promptEl.textContent = 'Indication clue — what drug is this?';
     indicationText.textContent = drug.idClue;
+  } else if (type === 'brand-to-generic') {
+    nameDisplay.style.display = 'none';
+    indicationProm.style.display = 'block';
+    promptEl.textContent = 'Brand name';
+    indicationText.textContent = drug.brand;
+  } else if (type === 'generic-to-brand') {
+    nameDisplay.style.display = 'none';
+    indicationProm.style.display = 'block';
+    promptEl.textContent = 'Generic name';
+    indicationText.textContent = drug.name;
   } else {
     nameDisplay.style.display = 'block';
     indicationProm.style.display = 'none';
@@ -932,8 +961,8 @@ function checkAnswer() {
   const results  = checkKeywords(answer, keywords);
   renderKeywords(answer);
 
-  // Drug ID: any one keyword (generic OR brand) is sufficient
-  const allMatched = current.type === 'drugid'
+  // Drug ID / generic-to-brand: any one keyword is sufficient
+  const allMatched = (current.type === 'drugid' || current.type === 'generic-to-brand')
     ? results.some(r => r.matched)
     : results.every(r => r.matched);
 
