@@ -209,6 +209,16 @@ header h1 {
   color: #4ade80;
 }
 
+.kw-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 7px rgba(34,197,94,0.45);
+  flex-shrink: 0;
+}
+
 .kw-chip.unmatched {
   background: #100a0a;
   border-color: #2a1a1a;
@@ -860,15 +870,25 @@ function renderCard() {
 
 function renderKeywords(typedAnswer) {
   if (!current) return;
-  // Drug ID: chips would reveal the answer — hide them entirely
+  // Drug ID: no chips — they'd reveal the answer
   if (current.type === 'drugid') {
     keywordDisplay.innerHTML = '';
     return;
   }
-  const results = checkKeywords(typedAnswer, keysForCard(current));
-  keywordDisplay.innerHTML = results.map(r =>
-    `<span class="kw-chip ${r.matched ? 'matched' : 'unmatched'}">${r.key}</span>`
-  ).join('');
+  const results  = checkKeywords(typedAnswer, keysForCard(current));
+  const hintOpen = keywordDisplay.classList.contains('hint-open');
+
+  if (hintOpen) {
+    // Full labeled chips (matched + unmatched)
+    keywordDisplay.innerHTML = results.map(r =>
+      `<span class="kw-chip ${r.matched ? 'matched' : 'unmatched'}">${r.key}</span>`
+    ).join('');
+  } else {
+    // Anonymous green dots for matched only — positive feedback without spoiling
+    keywordDisplay.innerHTML = results.map(r =>
+      r.matched ? `<span class="kw-dot"></span>` : ''
+    ).join('');
+  }
 }
 
 function updateProgress() {
@@ -922,9 +942,13 @@ function checkAnswer() {
     checkBtn.disabled = true;
     skipBtn.style.display = 'none';
     nextBtn.style.display = '';
-    correctCount++;
-    doneCount++;
-    updateProgress();
+    // Post-reveal: score already counted, don't double-count
+    if (!answerInput.dataset.postReveal) {
+      correctCount++;
+      doneCount++;
+      updateProgress();
+    }
+    answerInput.dataset.postReveal = '';
     if (attempts === 0) dot0.className = 'a-dot correct';
     else if (attempts === 1) dot1.className = 'a-dot correct';
   } else {
@@ -960,17 +984,24 @@ function revealAnswer() {
   const { label, text } = fullAnswerFor(current);
   fullAnswerEl.innerHTML = `<strong>${label}</strong>${text}`;
   fullAnswerEl.style.display = 'block';
-  resultFeedback.textContent = 'Answer revealed';
+  resultFeedback.textContent = 'Now type it in to continue';
   resultFeedback.className   = 'revealed';
   showAnswerBtn.style.display = 'none';
-  nextBtn.style.display = '';
   skipBtn.style.display = 'none';
-  checkBtn.disabled = true;
-  answerInput.disabled = true;
+  checkBtn.disabled = false;
+  answerInput.disabled = false;
+  answerInput.value = '';
+  answerInput.className = '';
+  renderKeywords('');
+  answerInput.focus();
+  // Mark as "shown" for scoring now, but hold Next until they type it
   shownCount++;
   doneCount++;
   updateProgress();
+  // Flag so checkAnswer knows to show Next (not penalise further) on success
+  answerInput.dataset.postReveal = 'true';
 }
+
 
 // ──────────────────────────────────────────────────────────────
 //  REFERENCE SHEET
