@@ -213,6 +213,11 @@ header h1 {
   background: #100a0a;
   border-color: #2a1a1a;
   color: #5a3030;
+  display: none;   /* hidden until hint is revealed */
+}
+
+#keyword-display.hint-open .kw-chip.unmatched {
+  display: inline-block;
 }
 
 /* Result feedback */
@@ -256,6 +261,21 @@ header h1 {
   justify-content: flex-end;
   align-items: center;
 }
+
+#hint-btn {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #2a2030;
+  border-radius: 6px;
+  color: #3a3050;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+#hint-btn:hover { border-color: #4a3060; color: #6a5080; }
+#hint-btn.open  { border-color: #c04030; color: #ff7043; }
 
 #show-answer-btn {
   padding: 8px 14px;
@@ -523,6 +543,7 @@ header h1 {
     </div>
     <div id="action-row">
       <button id="show-answer-btn" style="display:none">Show Answer</button>
+      <button id="hint-btn">Hint</button>
       <button id="skip-btn">Skip →</button>
       <button id="next-btn" style="display:none">Next →</button>
     </div>
@@ -771,6 +792,7 @@ const keywordDisplay = document.getElementById('keyword-display');
 const resultFeedback = document.getElementById('result-feedback');
 const actionRow      = document.getElementById('action-row');
 const showAnswerBtn  = document.getElementById('show-answer-btn');
+const hintBtn        = document.getElementById('hint-btn');
 const skipBtn        = document.getElementById('skip-btn');
 const nextBtn        = document.getElementById('next-btn');
 const fullAnswerEl   = document.getElementById('full-answer');
@@ -822,6 +844,12 @@ function renderCard() {
   fullAnswerEl.style.display = 'none';
   fullAnswerEl.innerHTML = '';
 
+  // Reset hint
+  keywordDisplay.classList.remove('hint-open');
+  hintBtn.classList.remove('open');
+  hintBtn.textContent = 'Hint';
+  hintBtn.style.display = (type === 'drugid') ? 'none' : '';
+
   // Reset dots
   dot0.className = 'a-dot';
   dot1.className = 'a-dot';
@@ -832,6 +860,11 @@ function renderCard() {
 
 function renderKeywords(typedAnswer) {
   if (!current) return;
+  // Drug ID: chips would reveal the answer — hide them entirely
+  if (current.type === 'drugid') {
+    keywordDisplay.innerHTML = '';
+    return;
+  }
   const results = checkKeywords(typedAnswer, keysForCard(current));
   keywordDisplay.innerHTML = results.map(r =>
     `<span class="kw-chip ${r.matched ? 'matched' : 'unmatched'}">${r.key}</span>`
@@ -1002,6 +1035,13 @@ checkBtn.addEventListener('click', checkAnswer);
 nextBtn.addEventListener('click', nextCard);
 
 showAnswerBtn.addEventListener('click', revealAnswer);
+
+hintBtn.addEventListener('click', () => {
+  const open = keywordDisplay.classList.toggle('hint-open');
+  hintBtn.classList.toggle('open', open);
+  hintBtn.textContent = open ? 'Hide Hint' : 'Hint';
+  renderKeywords(answerInput.value); // re-render so newly visible chips reflect current input
+});
 
 skipBtn.addEventListener('click', () => {
   if (!current) return;
