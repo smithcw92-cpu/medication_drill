@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMT Drug Drill</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #09080c;
+  color: #dde4ec;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 48px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+header h1 {
+  font-size: 1.9rem;
+  color: #ff7043;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  color: #4a5060;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─── Mode tabs ─── */
+.mode-wrap {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 580px;
+}
+
+.mode-btn {
+  padding: 7px 15px;
+  border-radius: 6px;
+  border: 1px solid #1e2030;
+  background: #0c0b10;
+  color: #3a4060;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.18s;
+  letter-spacing: 0.02em;
+}
+
+.mode-btn:hover { border-color: #3a3060; color: #7a6090; }
+
+.mode-btn.active {
+  background: #18080a;
+  border-color: #c04030;
+  color: #ff7043;
+}
+
+/* ─── Drill panel ─── */
+#drill-panel, #completion-panel {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* ─── Drug card ─── */
+#drug-card {
+  background: #0e0c14;
+  border: 1px solid #1a1a2a;
+  border-radius: 14px;
+  padding: 28px 26px 22px;
+  margin-bottom: 10px;
+}
+
+/* Drug name display */
+.drug-name-display {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+#drug-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ecf0ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: block;
+  line-height: 1.2;
+}
+
+#drug-brand {
+  font-size: 0.82rem;
+  color: #3a4860;
+  margin-top: 5px;
+  display: block;
+  font-style: italic;
+}
+
+/* Indication prompt (for Drug ID mode) */
+#indication-prompt {
+  background: #0a0810;
+  border: 1px solid #1e1a30;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: #8898b0;
+  line-height: 1.5;
+  text-align: center;
+  font-style: italic;
+}
+
+#indication-prompt strong {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #3a4060;
+  margin-bottom: 6px;
+  font-style: normal;
+}
+
+/* Question label */
+#question-label {
+  display: block;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #50607a;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 13px;
+}
+
+/* Answer input */
+.answer-row {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+#answer-input {
+  flex: 1;
+  background: #060508;
+  border: 1px solid #1a1a2a;
+  border-radius: 8px;
+  color: #e8eef8;
+  font-size: 1rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+#answer-input:focus { border-color: #c04030; }
+#answer-input.correct { border-color: #22c55e; background: #060e08; }
+#answer-input.wrong   { border-color: #ef4444; background: #0e0606; }
+
+#check-btn {
+  padding: 10px 20px;
+  background: #c04030;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.18s;
+  white-space: nowrap;
+}
+
+#check-btn:hover { background: #e05040; }
+#check-btn:disabled { background: #2a1a18; color: #5a3a38; cursor: default; }
+
+/* Keyword chips */
+#keyword-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin-bottom: 13px;
+}
+
+.kw-chip {
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid;
+  transition: all 0.15s;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.kw-chip.matched {
+  background: #061510;
+  border-color: #1a5a2a;
+  color: #4ade80;
+}
+
+.kw-chip.unmatched {
+  background: #100a0a;
+  border-color: #2a1a1a;
+  color: #5a3030;
+}
+
+/* Result feedback */
+#result-feedback {
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-height: 20px;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+#result-feedback.correct { color: #22c55e; }
+#result-feedback.wrong   { color: #ef4444; }
+#result-feedback.revealed { color: #f59e0b; }
+
+/* Attempt dots */
+.attempt-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-bottom: 13px;
+}
+
+.a-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #141020;
+  border: 1px solid #1e1a30;
+  transition: all 0.2s;
+}
+
+.a-dot.used    { background: #7a1a18; border-color: #c04030; }
+.a-dot.correct { background: #1a6a2a; border-color: #22c55e; }
+
+/* Action row */
+#action-row {
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+#show-answer-btn {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #2a2a3a;
+  border-radius: 6px;
+  color: #3a4860;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+#show-answer-btn:hover { border-color: #4a4060; color: #7a6090; }
+
+#skip-btn {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #1e1e2a;
+  border-radius: 6px;
+  color: #2a3040;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+#skip-btn:hover { border-color: #3a3050; color: #5a5070; }
+
+#next-btn {
+  padding: 8px 22px;
+  background: #1a6a2a;
+  border: 1px solid #22c55e;
+  border-radius: 6px;
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+#next-btn:hover { background: #22c55e; color: #fff; }
+
+/* Full answer reveal */
+#full-answer {
+  background: #070610;
+  border: 1px solid #1e1a2a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  font-size: 0.87rem;
+  color: #9090b8;
+  line-height: 1.65;
+}
+
+#full-answer strong {
+  color: #5050a0;
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Progress ─── */
+#progress-section {
+  width: 100%;
+  max-width: 560px;
+  margin-top: 14px;
+}
+
+.progress-bar-bg {
+  background: #0e0c14;
+  border-radius: 4px;
+  height: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  background: #c04030;
+  width: 0%;
+  transition: width 0.4s ease;
+  border-radius: 4px;
+}
+
+#progress-text {
+  text-align: center;
+  font-size: 0.73rem;
+  color: #2a3040;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Completion panel ─── */
+#completion-panel {
+  display: none;
+  background: #0e0c14;
+  border: 1px solid #1a1a2a;
+  border-radius: 14px;
+  padding: 40px 32px;
+  text-align: center;
+}
+
+#completion-panel h2 {
+  font-size: 1.5rem;
+  color: #ff7043;
+  margin-bottom: 8px;
+}
+
+.completion-score {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #ecf0ff;
+  margin: 12px 0 4px;
+}
+
+.completion-sub {
+  color: #3a4060;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 28px;
+}
+
+#restart-btn {
+  padding: 12px 36px;
+  background: #c04030;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+#restart-btn:hover { background: #e05040; }
+
+/* ─── Drug reference panel ─── */
+#ref-toggle-row {
+  width: 100%;
+  max-width: 560px;
+  text-align: right;
+  margin-bottom: 6px;
+}
+
+#ref-toggle-btn {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid #1a1a2a;
+  border-radius: 5px;
+  color: #2a3040;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.04em;
+}
+
+#ref-toggle-btn:hover { border-color: #3a3060; color: #5a5080; }
+#ref-toggle-btn.open  { border-color: #c04030; color: #ff7043; }
+
+#ref-panel {
+  display: none;
+  width: 100%;
+  max-width: 560px;
+  background: #0a0810;
+  border: 1px solid #1a1a2a;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+
+.ref-drug {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #12121e;
+}
+
+.ref-drug:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+.ref-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #c8d0e8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.ref-brand {
+  font-size: 0.75rem;
+  color: #3a4050;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.ref-row {
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.ref-row span {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.ref-row.rdose  span { color: #f59e0b; }
+.ref-row.rind   span { color: #4ade80; }
+.ref-row.rcon   span { color: #ef4444; }
+.ref-row.rdose  { color: #a07840; }
+.ref-row.rind   { color: #407850; }
+.ref-row.rcon   { color: #804040; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚑 EMT Drug Drill</h1>
+  <p class="subtitle">Kitsap County NW Protocol — EMT Level</p>
+</header>
+
+<div class="mode-wrap" id="mode-tabs">
+  <button class="mode-btn active" data-mode="all">All Fields</button>
+  <button class="mode-btn" data-mode="dose">Dose</button>
+  <button class="mode-btn" data-mode="indications">Indications</button>
+  <button class="mode-btn" data-mode="contraindications">Contraindications</button>
+  <button class="mode-btn" data-mode="drugid">Drug ID</button>
+</div>
+
+<div id="ref-toggle-row">
+  <button id="ref-toggle-btn">📋 Reference Sheet</button>
+</div>
+
+<div id="ref-panel"></div>
+
+<div id="drill-panel">
+  <div id="drug-card">
+    <div id="indication-prompt" style="display:none">
+      <strong>Indication clue — what drug is this?</strong>
+      <span id="indication-text"></span>
+    </div>
+    <div class="drug-name-display" id="name-display">
+      <span id="drug-name"></span>
+      <span id="drug-brand"></span>
+    </div>
+    <span id="question-label"></span>
+    <div class="answer-row">
+      <input type="text" id="answer-input" placeholder="type your answer…" autocomplete="off" autocorrect="off" autocapitalize="off">
+      <button id="check-btn">Check</button>
+    </div>
+    <div id="keyword-display"></div>
+    <div id="result-feedback"></div>
+    <div class="attempt-dots" id="attempt-dots">
+      <div class="a-dot" id="dot0"></div>
+      <div class="a-dot" id="dot1"></div>
+    </div>
+    <div id="action-row">
+      <button id="show-answer-btn" style="display:none">Show Answer</button>
+      <button id="skip-btn">Skip →</button>
+      <button id="next-btn" style="display:none">Next →</button>
+    </div>
+  </div>
+  <div id="full-answer" style="display:none"></div>
+</div>
+
+<div id="progress-section">
+  <div class="progress-bar-bg"><div id="progress-bar"></div></div>
+  <div id="progress-text"></div>
+</div>
+
+<div id="completion-panel">
+  <h2>🚑 Set Complete!</h2>
+  <div class="completion-score" id="score-display"></div>
+  <div class="completion-sub" id="score-sub"></div>
+  <button id="restart-btn">Drill Again</button>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+//  DRUG DATA
+// ──────────────────────────────────────────────────────────────
+const EMT_DRUGS = [
+  {
+    name: "Aspirin",
+    brand: "Bayer / Ecotrin",
+    dose: "324mg (4 × 81mg tabs) chewed PO",
+    doseKeys: ["324", "chew"],
+    indications: "Chest pain, suspected MI / ACS",
+    indicationKeys: ["chest", "mi"],
+    contraindications: "Known hypersensitivity; pediatric patients",
+    contraindicationKeys: ["hypersensitivity", "pediatric"],
+    idClue: "Chest pain with suspected heart attack",
+    nameKeys: ["aspirin"],
+  },
+  {
+    name: "Activated Charcoal",
+    brand: "CharcoAid",
+    dose: "50g PO (by mouth / NG)",
+    doseKeys: ["50"],
+    indications: "Suspected overdose or accidental ingestion within 30 minutes",
+    indicationKeys: ["overdose", "ingestion"],
+    contraindications: "ALOC, absent gag reflex, caustic or corrosive or petroleum ingestion",
+    contraindicationKeys: ["aloc", "gag", "caustic"],
+    idClue: "Suspected poison ingestion / overdose within 30 min, intact gag reflex",
+    nameKeys: ["charcoal"],
+  },
+  {
+    name: "Albuterol",
+    brand: "Proventil / Ventolin",
+    dose: "1–2 puffs of patient's own MDI (EMT scope)",
+    doseKeys: ["puff", "mdi"],
+    indications: "Bronchospasm, reversible obstructive airway disease",
+    indicationKeys: ["bronchospasm", "airway"],
+    contraindications: "Known hypersensitivity; tachycardia (relative contraindication)",
+    contraindicationKeys: ["hypersensitivity", "tachycardia"],
+    idClue: "Bronchospasm / wheezing — reversible obstructive airway disease",
+    nameKeys: ["albuterol"],
+  },
+  {
+    name: "Diphenhydramine",
+    brand: "Benadryl",
+    dose: "12.5–50mg PO (EMT: oral only)",
+    doseKeys: ["50mg", "po"],
+    indications: "Anaphylaxis, allergic reaction, dystonia, nausea",
+    indicationKeys: ["anaphylaxis", "allergic"],
+    contraindications: "Hypersensitivity, newborns, acute asthma, COPD exacerbation",
+    contraindicationKeys: ["hypersensitivity", "asthma"],
+    idClue: "Anaphylaxis or allergic reaction (PO only at EMT level)",
+    nameKeys: ["diphenhydramine", "benadryl"],
+  },
+  {
+    name: "Epinephrine",
+    brand: "Adrenaline / EpiPen",
+    dose: "0.3mg (1:1,000) IM via auto-injector; repeat q10–20 min × 2",
+    doseKeys: ["0.3", "1:1,000", "im"],
+    indications: "Anaphylaxis",
+    indicationKeys: ["anaphylaxis"],
+    contraindications: "None in emergent anaphylaxis setting",
+    contraindicationKeys: ["none"],
+    idClue: "Anaphylaxis — life-threatening allergic reaction",
+    nameKeys: ["epinephrine", "epipen"],
+  },
+  {
+    name: "Glucose Oral",
+    brand: "Glucose Paste / Insta-Glucose",
+    dose: "One tube PO, placed between cheek and gum",
+    doseKeys: ["tube", "cheek"],
+    indications: "Hypoglycemia in conscious patient able to swallow",
+    indicationKeys: ["hypoglycemia", "conscious"],
+    contraindications: "Unconsciousness, inability to swallow, hyperglycemia",
+    contraindicationKeys: ["unconscious", "swallow", "hyperglycemia"],
+    idClue: "Hypoglycemia — low blood sugar, patient is awake and able to swallow",
+    nameKeys: ["glucose", "oral"],
+  },
+  {
+    name: "Ipratropium",
+    brand: "Atrovent / Ipramide",
+    dose: "0.5mg via nebulizer (adults); repeat q6–8 hours",
+    doseKeys: ["0.5", "nebulizer"],
+    indications: "Bronchospasm from reactive airway disease; organophosphate poisoning",
+    indicationKeys: ["bronchospasm", "reactive"],
+    contraindications: "Known hypersensitivity; use caution with narrow-angle glaucoma",
+    contraindicationKeys: ["hypersensitivity", "glaucoma"],
+    idClue: "Bronchospasm / reactive airway disease (anticholinergic bronchodilator)",
+    nameKeys: ["ipratropium", "atrovent"],
+  },
+  {
+    name: "Naloxone",
+    brand: "Narcan",
+    dose: "0.4–4mg intranasal (IN) — EMT scope",
+    doseKeys: ["4mg", "nasal"],
+    indications: "Suspected or known opioid overdose, ALOC",
+    indicationKeys: ["opioid", "overdose"],
+    contraindications: "None in emergent setting",
+    contraindicationKeys: ["none"],
+    idClue: "Suspected opioid overdose / respiratory depression from narcotics",
+    nameKeys: ["naloxone", "narcan"],
+  },
+  {
+    name: "Nitroglycerin",
+    brand: "NitroStat / NitroQuick",
+    dose: "0.4mg SL q3–5 min if SBP > 100 mmHg",
+    doseKeys: ["0.4", "sl", "sbp"],
+    indications: "ACS, acute angina, MI, CHF with pulmonary edema",
+    indicationKeys: ["angina", "acs"],
+    contraindications: "SBP < 100, intracranial bleeding / head trauma, Viagra/Levitra within 24 hr, Cialis within 48 hr",
+    contraindicationKeys: ["sbp", "viagra", "intracranial"],
+    idClue: "Chest pain — suspected angina or ACS, SBP above 100",
+    nameKeys: ["nitroglycerin", "nitro"],
+  },
+  {
+    name: "Ondansetron",
+    brand: "Zofran",
+    dose: "4mg SL (EMT: sublingual only)",
+    doseKeys: ["4mg", "sl"],
+    indications: "Nausea and vomiting",
+    indicationKeys: ["nausea", "vomiting"],
+    contraindications: "Hypersensitivity; liver disease",
+    contraindicationKeys: ["hypersensitivity", "liver"],
+    idClue: "Nausea and vomiting",
+    nameKeys: ["ondansetron", "zofran"],
+  },
+  {
+    name: "Oxymetazoline",
+    brand: "Afrin",
+    dose: "2–3 puffs each nostril on inhalation",
+    doseKeys: ["puff", "nostril"],
+    indications: "Pre-medication for nasal intubation; epistaxis (nosebleed)",
+    indicationKeys: ["nasal", "epistaxis"],
+    contraindications: "Known hypersensitivity",
+    contraindicationKeys: ["hypersensitivity"],
+    idClue: "Epistaxis (nosebleed) or pre-medication before nasal intubation",
+    nameKeys: ["oxymetazoline", "afrin"],
+  },
+];
+
+// ──────────────────────────────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────────────────────────────
+let activeMode = 'all';   // all | dose | indications | contraindications | drugid
+let queue      = [];      // [{drug, type}]
+let current    = null;    // {drug, type}
+let attempts   = 0;
+let totalCards = 0;
+let correctCount = 0;
+let shownCount   = 0;
+let doneCount    = 0;     // correct + shown
+
+// ──────────────────────────────────────────────────────────────
+//  HELPERS
+// ──────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildQueue() {
+  const types = activeMode === 'all'
+    ? ['dose', 'indications', 'contraindications']
+    : activeMode === 'drugid'
+    ? ['drugid']
+    : [activeMode];
+
+  queue = [];
+  EMT_DRUGS.forEach(drug => {
+    types.forEach(type => queue.push({ drug, type }));
+  });
+  shuffle(queue);
+  totalCards  = queue.length;
+  correctCount = 0;
+  shownCount   = 0;
+  doneCount    = 0;
+}
+
+function keysForCard(card) {
+  const { drug, type } = card;
+  if (type === 'dose')             return drug.doseKeys;
+  if (type === 'indications')      return drug.indicationKeys;
+  if (type === 'contraindications')return drug.contraindicationKeys;
+  if (type === 'drugid')           return drug.nameKeys;
+  return [];
+}
+
+function fullAnswerFor(card) {
+  const { drug, type } = card;
+  if (type === 'dose')             return { label: 'Dose', text: drug.dose };
+  if (type === 'indications')      return { label: 'Indications', text: drug.indications };
+  if (type === 'contraindications')return { label: 'Contraindications', text: drug.contraindications };
+  if (type === 'drugid')           return { label: 'Drug', text: `${drug.name} (${drug.brand})` };
+  return { label: '', text: '' };
+}
+
+function questionLabelFor(card) {
+  const { type } = card;
+  if (type === 'dose')             return '💊 What is the EMT dose?';
+  if (type === 'indications')      return '✅ What are the indications?';
+  if (type === 'contraindications')return '⛔ What are the contraindications?';
+  if (type === 'drugid')           return '🔍 Name this drug';
+  return '';
+}
+
+function checkKeywords(answer, keywords) {
+  const lower = answer.toLowerCase();
+  return keywords.map(k => ({ key: k, matched: lower.includes(k.toLowerCase()) }));
+}
+
+// ──────────────────────────────────────────────────────────────
+//  UI ELEMENTS
+// ──────────────────────────────────────────────────────────────
+const drillPanel     = document.getElementById('drill-panel');
+const completionPanel= document.getElementById('completion-panel');
+const nameDisplay    = document.getElementById('name-display');
+const indicationProm = document.getElementById('indication-prompt');
+const indicationText = document.getElementById('indication-text');
+const drugNameEl     = document.getElementById('drug-name');
+const drugBrandEl    = document.getElementById('drug-brand');
+const questionLabel  = document.getElementById('question-label');
+const answerInput    = document.getElementById('answer-input');
+const checkBtn       = document.getElementById('check-btn');
+const keywordDisplay = document.getElementById('keyword-display');
+const resultFeedback = document.getElementById('result-feedback');
+const actionRow      = document.getElementById('action-row');
+const showAnswerBtn  = document.getElementById('show-answer-btn');
+const skipBtn        = document.getElementById('skip-btn');
+const nextBtn        = document.getElementById('next-btn');
+const fullAnswerEl   = document.getElementById('full-answer');
+const progressBar    = document.getElementById('progress-bar');
+const progressText   = document.getElementById('progress-text');
+const scoreDisplay   = document.getElementById('score-display');
+const scoreSub       = document.getElementById('score-sub');
+const dot0           = document.getElementById('dot0');
+const dot1           = document.getElementById('dot1');
+
+// ──────────────────────────────────────────────────────────────
+//  RENDER
+// ──────────────────────────────────────────────────────────────
+function renderCard() {
+  if (!current) return;
+  const { drug, type } = current;
+
+  // Drug name / indication prompt
+  if (type === 'drugid') {
+    nameDisplay.style.display = 'none';
+    indicationProm.style.display = 'block';
+    indicationText.textContent = drug.idClue;
+  } else {
+    nameDisplay.style.display = 'block';
+    indicationProm.style.display = 'none';
+    drugNameEl.textContent  = drug.name;
+    drugBrandEl.textContent = drug.brand;
+  }
+
+  questionLabel.textContent = questionLabelFor(current);
+
+  // Reset input
+  answerInput.value = '';
+  answerInput.className = '';
+  answerInput.disabled = false;
+
+  // Reset keywords
+  renderKeywords('');
+
+  // Reset feedback
+  resultFeedback.textContent = '';
+  resultFeedback.className = '';
+
+  // Reset action buttons
+  showAnswerBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
+  skipBtn.style.display = '';
+  checkBtn.disabled = false;
+  fullAnswerEl.style.display = 'none';
+  fullAnswerEl.innerHTML = '';
+
+  // Reset dots
+  dot0.className = 'a-dot';
+  dot1.className = 'a-dot';
+
+  attempts = 0;
+  answerInput.focus();
+}
+
+function renderKeywords(typedAnswer) {
+  if (!current) return;
+  const results = checkKeywords(typedAnswer, keysForCard(current));
+  keywordDisplay.innerHTML = results.map(r =>
+    `<span class="kw-chip ${r.matched ? 'matched' : 'unmatched'}">${r.key}</span>`
+  ).join('');
+}
+
+function updateProgress() {
+  const pct = totalCards > 0 ? (doneCount / totalCards) * 100 : 0;
+  progressBar.style.width = pct + '%';
+  progressText.textContent = `${doneCount} / ${totalCards} completed`;
+}
+
+// ──────────────────────────────────────────────────────────────
+//  NEXT CARD
+// ──────────────────────────────────────────────────────────────
+function nextCard() {
+  if (queue.length === 0) {
+    showCompletion();
+    return;
+  }
+  current  = queue.shift();
+  attempts = 0;
+  renderCard();
+}
+
+function showCompletion() {
+  drillPanel.style.display = 'none';
+  document.getElementById('progress-section').style.display = 'none';
+  completionPanel.style.display = 'block';
+
+  const total = totalCards;
+  const pct   = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  scoreDisplay.textContent = `${correctCount} / ${total}`;
+  scoreSub.textContent     = `${pct}% correct  ·  ${shownCount} revealed`;
+}
+
+// ──────────────────────────────────────────────────────────────
+//  CHECK ANSWER
+// ──────────────────────────────────────────────────────────────
+function checkAnswer() {
+  const answer = answerInput.value.trim();
+  if (!answer || !current) return;
+
+  const keywords = keysForCard(current);
+  const results  = checkKeywords(answer, keywords);
+  renderKeywords(answer);
+
+  const allMatched = results.every(r => r.matched);
+
+  if (allMatched) {
+    // CORRECT
+    answerInput.className = 'correct';
+    resultFeedback.textContent = '✓ Correct!';
+    resultFeedback.className   = 'correct';
+    checkBtn.disabled = true;
+    skipBtn.style.display = 'none';
+    nextBtn.style.display = '';
+    correctCount++;
+    doneCount++;
+    updateProgress();
+    if (attempts === 0) dot0.className = 'a-dot correct';
+    else if (attempts === 1) dot1.className = 'a-dot correct';
+  } else {
+    // WRONG
+    answerInput.className = 'wrong';
+    attempts++;
+
+    if (attempts === 1) {
+      dot0.className = 'a-dot used';
+      resultFeedback.textContent = 'Not quite — check the highlighted keywords';
+      resultFeedback.className   = 'wrong';
+    } else if (attempts === 2) {
+      dot1.className = 'a-dot used';
+      resultFeedback.textContent = 'Still missing some keywords';
+      resultFeedback.className   = 'wrong';
+      showAnswerBtn.style.display = '';
+    } else {
+      resultFeedback.textContent = 'Keep trying, or reveal the answer';
+      resultFeedback.className   = 'wrong';
+    }
+
+    // clear wrong style after brief flash
+    setTimeout(() => {
+      if (answerInput.className === 'wrong') answerInput.className = '';
+    }, 600);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  SHOW ANSWER
+// ──────────────────────────────────────────────────────────────
+function revealAnswer() {
+  const { label, text } = fullAnswerFor(current);
+  fullAnswerEl.innerHTML = `<strong>${label}</strong>${text}`;
+  fullAnswerEl.style.display = 'block';
+  resultFeedback.textContent = 'Answer revealed';
+  resultFeedback.className   = 'revealed';
+  showAnswerBtn.style.display = 'none';
+  nextBtn.style.display = '';
+  skipBtn.style.display = 'none';
+  checkBtn.disabled = true;
+  answerInput.disabled = true;
+  shownCount++;
+  doneCount++;
+  updateProgress();
+}
+
+// ──────────────────────────────────────────────────────────────
+//  REFERENCE SHEET
+// ──────────────────────────────────────────────────────────────
+function buildRefPanel() {
+  const panel = document.getElementById('ref-panel');
+  panel.innerHTML = EMT_DRUGS.map(d => `
+    <div class="ref-drug">
+      <div class="ref-name">${d.name}</div>
+      <div class="ref-brand">${d.brand}</div>
+      <div class="ref-row rdose"><span>Dose</span>${d.dose}</div>
+      <div class="ref-row rind"><span>Indications</span>${d.indications}</div>
+      <div class="ref-row rcon"><span>Contraindications</span>${d.contraindications}</div>
+    </div>
+  `).join('');
+}
+
+// ──────────────────────────────────────────────────────────────
+//  START / RESTART
+// ──────────────────────────────────────────────────────────────
+function startDrill() {
+  buildQueue();
+  drillPanel.style.display = '';
+  document.getElementById('progress-section').style.display = '';
+  completionPanel.style.display = 'none';
+  updateProgress();
+  nextCard();
+}
+
+// ──────────────────────────────────────────────────────────────
+//  EVENT LISTENERS
+// ──────────────────────────────────────────────────────────────
+
+// Mode tabs
+document.getElementById('mode-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeMode = btn.dataset.mode;
+  startDrill();
+});
+
+// Real-time keyword chips
+answerInput.addEventListener('input', () => {
+  renderKeywords(answerInput.value);
+});
+
+// Check on Enter
+answerInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (nextBtn.style.display !== 'none') {
+      nextCard();
+    } else {
+      checkAnswer();
+    }
+  }
+});
+
+checkBtn.addEventListener('click', checkAnswer);
+
+nextBtn.addEventListener('click', nextCard);
+
+showAnswerBtn.addEventListener('click', revealAnswer);
+
+skipBtn.addEventListener('click', () => {
+  if (!current) return;
+  queue.push(current);  // send to end
+  current = null;
+  nextCard();
+});
+
+document.getElementById('restart-btn').addEventListener('click', startDrill);
+
+// Reference sheet toggle
+const refToggleBtn = document.getElementById('ref-toggle-btn');
+const refPanel     = document.getElementById('ref-panel');
+
+refToggleBtn.addEventListener('click', () => {
+  const open = refPanel.style.display !== 'none' && refPanel.style.display !== '';
+  if (open) {
+    refPanel.style.display = 'none';
+    refToggleBtn.textContent = '📋 Reference Sheet';
+    refToggleBtn.classList.remove('open');
+  } else {
+    buildRefPanel();
+    refPanel.style.display = 'block';
+    refToggleBtn.textContent = '✕ Close Reference';
+    refToggleBtn.classList.add('open');
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────────────────────
+startDrill();
+</script>
+</body>
+</html>
