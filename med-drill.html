@@ -17,6 +17,12 @@
       margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
     }
     h1 { font-size: 1.3rem; color: #e8eaf0; font-weight: 700; }
+    .home-link {
+      font-size: 0.78rem; font-weight: 600; color: #3a4a60;
+      text-decoration: none; padding: 5px 10px; border-radius: 5px;
+      border: 1px solid #1e2840; transition: all 0.2s;
+    }
+    .home-link:hover { color: #7a9ab8; border-color: #3a5070; }
 
     .stats {
       display: flex; gap: 16px; font-size: 0.82rem; color: #5a6380; flex-wrap: wrap;
@@ -286,7 +292,9 @@
 <body>
 
 <header>
+  <a href="index.html" class="home-link">← Home</a>
   <h1>💊 Medication Drill</h1>
+  <span></span>
 </header>
 
 <div class="nw-protocol-toggle">
