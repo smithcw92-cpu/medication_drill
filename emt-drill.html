@@ -556,14 +556,18 @@ header h1 {
 
 .fc-back {
   background: #0b0d12;
-  border: 1px dashed #1e2640;
+  border: 1px dashed #2a3a50;
   flex-direction: column; gap: 5px;
+  transition: border-color 0.2s;
 }
-.fc-back-icon { font-size: 1.3rem; }
+.fc-back:hover { border-color: #4a6a90; }
+.fc-back-icon { display: none; }
 .fc-back-hint {
-  font-size: 0.68rem; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase; color: #2a3550;
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #4a6a90;
+  transition: color 0.2s;
 }
+.fc-back:hover .fc-back-hint { color: #7aaad0; }
 
 .fc-front {
   background: #080e10;
@@ -630,7 +634,6 @@ header h1 {
     <div id="flip-wrap" style="display:none">
       <div class="flip-inner" id="flip-inner">
         <div class="fc-back">
-          <span class="fc-back-icon">🃏</span>
           <span class="fc-back-hint">tap to reveal answer</span>
         </div>
         <div class="fc-front" id="fc-front">
