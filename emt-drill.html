@@ -526,6 +526,66 @@ header h1 {
 .ref-row.rdose  { color: #a07840; }
 .ref-row.rind   { color: #407850; }
 .ref-row.rcon   { color: #804040; }
+
+/* ─── Flip card ─── */
+#flip-wrap {
+  perspective: 900px;
+  margin: 14px 0 6px;
+  width: 100%;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: 90px;
+  transform-style: preserve-3d;
+  transition: transform 0.42s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.flip-inner.flipped { transform: rotateY(180deg); }
+
+.fc-back, .fc-front {
+  position: absolute; inset: 0;
+  border-radius: 10px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.fc-back {
+  background: #0b0d12;
+  border: 1px dashed #1e2640;
+  flex-direction: column; gap: 5px;
+}
+.fc-back-icon { font-size: 1.3rem; }
+.fc-back-hint {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #2a3550;
+}
+
+.fc-front {
+  background: #080e10;
+  border: 1px solid #152818;
+  transform: rotateY(180deg);
+  flex-direction: column; align-items: flex-start;
+  padding: 16px 20px; gap: 5px; min-height: 90px;
+  justify-content: center;
+}
+
+.fc-front-label {
+  font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; color: #1e3828;
+}
+
+.fc-front-text {
+  font-size: 0.97rem; font-weight: 600; line-height: 1.65;
+}
+
+.fc-match { color: #4ade80; }
+.fc-miss  { color: #1e2830; }
+.fc-skip  { color: #2a3540; }
 </style>
 </head>
 <body>
@@ -566,6 +626,21 @@ header h1 {
       <input type="text" id="answer-input" placeholder="type your answer…" autocomplete="off" autocorrect="off" autocapitalize="off">
       <button id="check-btn">Check</button>
     </div>
+    <!-- Flip card (type-and-flip mode) -->
+    <div id="flip-wrap" style="display:none">
+      <div class="flip-inner" id="flip-inner">
+        <div class="fc-back">
+          <span class="fc-back-icon">🃏</span>
+          <span class="fc-back-hint">tap to reveal answer</span>
+        </div>
+        <div class="fc-front" id="fc-front">
+          <span class="fc-front-label"></span>
+          <span class="fc-front-text"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyword chips (names / drug-id modes) -->
     <div id="keyword-display"></div>
     <div id="result-feedback"></div>
     <div class="attempt-dots" id="attempt-dots">
@@ -639,7 +714,7 @@ const EMT_DRUGS = [
     name: "Diphenhydramine",
     brand: "Benadryl",
     dose: "12.5–50mg PO (EMT: oral only)",
-    doseKeys: ["50mg", "po"],
+    doseKeys: ["12.5", "50", "po"],
     indications: "Anaphylaxis, allergic reaction, dystonia, nausea",
     indicationKeys: ["anaphylaxis", "allergic"],
     contraindications: "Hypersensitivity, newborns, acute asthma, COPD exacerbation",
@@ -817,6 +892,14 @@ function questionLabelFor(card) {
   return '';
 }
 
+// Types that use the type-and-flip format vs keyword-chip format
+function isFlipType(type) {
+  return ['dose', 'indications', 'contraindications'].includes(type);
+}
+
+// Short/filler words that shouldn't count against you
+const SKIP_WORDS = new Set(['a','an','the','in','of','to','at','up','or','and','if','as','by','on','be','is','it','x','mg','–','—','/','with','for','due','per']);
+
 function normalizeDose(str) {
   return str.toLowerCase()
     .replace(/(\d)\s+(mg|mcg|g\b|ml|l\b|kg|mcg|iu|meq|mm|cm|puff|tab|tube)/gi, '$1$2')
@@ -859,6 +942,34 @@ const scoreDisplay   = document.getElementById('score-display');
 const scoreSub       = document.getElementById('score-sub');
 const dot0           = document.getElementById('dot0');
 const dot1           = document.getElementById('dot1');
+const flipWrap       = document.getElementById('flip-wrap');
+const flipInner      = document.getElementById('flip-inner');
+const fcFront        = document.getElementById('fc-front');
+
+let cardIsFlipped = false;
+
+function renderFlipCard(typedAnswer) {
+  if (!current) return;
+  const { label, text } = fullAnswerFor(current);
+  const normalized = normalizeDose(typedAnswer.toLowerCase());
+  const html = text.replace(/(\S+)/g, word => {
+    const clean    = word.toLowerCase().replace(/[(),;×\[\]]/g, '');
+    const normClean = normalizeDose(clean);
+    if (normClean.length < 2 || SKIP_WORDS.has(normClean)) {
+      return `<span class="fc-skip">${word}</span> `;
+    }
+    const matched = normalized.includes(normClean);
+    return `<span class="${matched ? 'fc-match' : 'fc-miss'}">${word}</span> `;
+  });
+  fcFront.querySelector('.fc-front-label').textContent = label;
+  fcFront.querySelector('.fc-front-text').innerHTML    = html.trim();
+}
+
+flipInner.addEventListener('click', () => {
+  cardIsFlipped = !cardIsFlipped;
+  flipInner.classList.toggle('flipped', cardIsFlipped);
+  if (cardIsFlipped) renderFlipCard(answerInput.value);
+});
 
 // ──────────────────────────────────────────────────────────────
 //  RENDER
@@ -907,17 +1018,35 @@ function renderCard() {
 
   // Reset action buttons
   showAnswerBtn.style.display = 'none';
-  nextBtn.style.display = 'none';
-  skipBtn.style.display = '';
-  checkBtn.disabled = false;
-  fullAnswerEl.style.display = 'none';
+  fullAnswerEl.style.display  = 'none';
   fullAnswerEl.innerHTML = '';
 
-  // Reset hint
+  if (isFlipType(type)) {
+    // ── Type-and-flip mode ──────────────────────────────────
+    checkBtn.style.display  = 'none';
+    hintBtn.style.display   = 'none';
+    document.getElementById('attempt-dots').style.display = 'none';
+    flipWrap.style.display  = '';
+    flipInner.classList.remove('flipped');
+    cardIsFlipped = false;
+    nextBtn.style.display   = '';   // always available — self-assessed
+    skipBtn.style.display   = '';
+    keywordDisplay.innerHTML = '';
+  } else {
+    // ── Keyword-chip mode (names / drug-id) ─────────────────
+    checkBtn.style.display  = '';
+    checkBtn.disabled       = false;
+    hintBtn.style.display   = (type === 'drugid') ? 'none' : '';
+    document.getElementById('attempt-dots').style.display = '';
+    flipWrap.style.display  = 'none';
+    nextBtn.style.display   = 'none';
+    skipBtn.style.display   = '';
+  }
+
+  // Reset hint state (chip mode)
   keywordDisplay.classList.remove('hint-open');
   hintBtn.classList.remove('open');
   hintBtn.textContent = 'Hint';
-  hintBtn.style.display = (type === 'drugid') ? 'none' : '';
 
   // Reset dots
   dot0.className = 'a-dot';
@@ -1107,9 +1236,14 @@ document.getElementById('mode-tabs').addEventListener('click', e => {
   startDrill();
 });
 
-// Real-time keyword chips
+// Real-time updates
 answerInput.addEventListener('input', () => {
-  renderKeywords(answerInput.value);
+  if (current && isFlipType(current.type)) {
+    // Refresh flip card live if already flipped
+    if (cardIsFlipped) renderFlipCard(answerInput.value);
+  } else {
+    renderKeywords(answerInput.value);
+  }
 });
 
 // Check on Enter
