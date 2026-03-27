@@ -701,8 +701,8 @@ const EMT_DRUGS = [
   {
     name: "Albuterol",
     brand: "Proventil / Ventolin",
-    dose: "1–2 puffs of patient's own MDI (EMT scope)",
-    doseKeys: ["puff", "mdi"],
+    dose: "1–2 puffs of patient's own MDI; or 2.5mg SVN (with specialized training); do not exceed 15mg/hr",
+    doseKeys: ["puff", "mdi", "2.5", "svn", "15"],
     indications: "Bronchospasm, reversible obstructive airway disease",
     indicationKeys: ["bronchospasm", "airway"],
     contraindications: "Known hypersensitivity; tachycardia (relative contraindication)",
@@ -955,7 +955,8 @@ function renderFlipCard(typedAnswer) {
   const html = text.replace(/(\S+)/g, word => {
     const clean    = word.toLowerCase().replace(/[(),;×\[\]]/g, '');
     const normClean = normalizeDose(clean);
-    if (normClean.length < 2 || SKIP_WORDS.has(normClean)) {
+    const startsWithDigit = /^\d/.test(normClean);
+    if (!startsWithDigit && (normClean.length < 2 || SKIP_WORDS.has(normClean))) {
       return `<span class="fc-skip">${word}</span> `;
     }
     const matched = normalized.includes(normClean);
@@ -1246,13 +1247,25 @@ answerInput.addEventListener('input', () => {
   }
 });
 
-// Check on Enter
+// Enter key behaviour
 answerInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
-    if (nextBtn.style.display !== 'none') {
-      nextCard();
+    if (current && isFlipType(current.type)) {
+      // Flip mode: first Enter flips, second Enter advances
+      if (!cardIsFlipped) {
+        cardIsFlipped = true;
+        flipInner.classList.add('flipped');
+        renderFlipCard(answerInput.value);
+      } else {
+        nextCard();
+      }
     } else {
-      checkAnswer();
+      // Keyword mode: Enter checks or advances
+      if (nextBtn.style.display !== 'none') {
+        nextCard();
+      } else {
+        checkAnswer();
+      }
     }
   }
 });
