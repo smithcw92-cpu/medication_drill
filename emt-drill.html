@@ -817,9 +817,19 @@ function questionLabelFor(card) {
   return '';
 }
 
+function normalizeDose(str) {
+  return str.toLowerCase()
+    .replace(/(\d)\s+(mg|mcg|g\b|ml|l\b|kg|mcg|iu|meq|mm|cm|puff|tab|tube)/gi, '$1$2')
+    .replace(/\.\s+(\d)/g, '.$1');   // "0. 4mg" → "0.4mg"
+}
+
 function checkKeywords(answer, keywords) {
-  const lower = answer.toLowerCase();
-  return keywords.map(k => ({ key: k, matched: lower.includes(k.toLowerCase()) }));
+  const lower      = answer.toLowerCase();
+  const normalized = normalizeDose(lower);   // also used for non-dose — harmless
+  return keywords.map(k => ({
+    key: k,
+    matched: lower.includes(k.toLowerCase()) || normalized.includes(k.toLowerCase())
+  }));
 }
 
 // ──────────────────────────────────────────────────────────────
