@@ -738,7 +738,7 @@ const EMT_DRUGS = [
     nameKeys: ["epinephrine", "epipen"],
   },
   {
-    name: "Glucose Oral",
+    name: "Oral Glucose",
     brand: "Glucose Paste / Insta-Glucose",
     dose: "One tube PO, placed between cheek and gum",
     doseKeys: ["tube", "cheek"],
@@ -747,7 +747,7 @@ const EMT_DRUGS = [
     contraindications: "Unconsciousness, inability to swallow, hyperglycemia",
     contraindicationKeys: ["unconscious", "swallow", "hyperglycemia"],
     idClue: "Hypoglycemia — low blood sugar, patient is awake and able to swallow",
-    nameKeys: ["glucose", "oral"],
+    nameKeys: ["oral glucose"],
   },
   {
     name: "Ipratropium",
@@ -897,7 +897,7 @@ function questionLabelFor(card) {
 
 // Types that use the type-and-flip format vs keyword-chip format
 function isFlipType(type) {
-  return ['dose', 'indications', 'contraindications'].includes(type);
+  return ['dose', 'indications', 'contraindications', 'brand-to-generic', 'generic-to-brand', 'drugid'].includes(type);
 }
 
 // Short/filler words that shouldn't count against you
