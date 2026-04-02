@@ -353,6 +353,13 @@
     }
     .recall-reveal-btn:hover { color: #9aa0b8; border-color: #3a4060; }
     .recall-reveal-btn.active { color: #c8cce0; border-color: #4a5a8a; background: #1e2438; }
+
+    .recall-reset-btn {
+      padding: 3px 12px; border-radius: 6px; border: 1px solid #2a3050;
+      background: none; color: #5a6380; cursor: pointer;
+      font-size: 0.74rem; font-weight: 600; transition: all 0.15s; margin-left: 10px;
+    }
+    .recall-reset-btn:hover { color: #e07070; border-color: #5a2020; }
   </style>
 </head>
 <body>
@@ -1712,7 +1719,17 @@ function renderRecallGrid() {
   }).join('');
 
   document.getElementById('recall-progress').innerHTML =
-    `<span class="recall-found">${found}</span> / ${total} names recalled`;
+    `<span class="recall-found">${found}</span> / ${total} names recalled
+     <button class="recall-reset-btn" id="recall-reset-btn" style="display:${found > 0 ? 'inline' : 'none'}">↺ Reset</button>`;
+  const resetBtn = document.getElementById('recall-reset-btn');
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    recallFound.clear();
+    document.getElementById('recall-grid').classList.remove('show-names');
+    document.getElementById('recall-reveal-btn').textContent = '👁 Show';
+    document.getElementById('recall-reveal-btn').classList.remove('active');
+    renderRecallGrid();
+    document.getElementById('recall-input').focus();
+  });
 }
 
 function checkRecallInput() {
