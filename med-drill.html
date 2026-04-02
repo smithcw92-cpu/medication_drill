@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EMT Medication Practice</title>
+  <title>Medication Drill</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -372,7 +372,7 @@
 
 <header>
   <a href="index.html" class="home-link">← Home</a>
-  <h1>💊 EMT Medication Practice</h1>
+  <h1>💊 Medication Drill</h1>
   <span></span>
 </header>
 
@@ -600,6 +600,7 @@ const DRUGS = [
     note:"Antiarrhythmic — controls dangerous heart rhythms including AFib and ventricular arrhythmias." },
   { name:"Nitroglycerin",   brand:"Nitrostat / Nitro-Dur", category:"Heart / BP",    tag:"cat-hbp",
     keys:["heart","cardiac","chest pain","angina","nitro","coronary","blood pressure","bp"],
+    aliases:["nitro"],
     note:"Dilates blood vessels to relieve chest pain (angina). Can cause a rapid drop in blood pressure." },
   { name:"Diltiazem",       brand:"Cardizem",              category:"Heart / BP",    tag:"cat-hbp",
     keys:["heart","cardiac","rate","rhythm","blood pressure","hypertension","bp","calcium","afib","angina"],
@@ -1022,8 +1023,10 @@ function isSingleCategory() {
   return !activeCategories.has('all') && activeCategories.size === 1;
 }
 function getGenericKeys(drug) {
-  return drug.name.replace(/\(.*?\)/g,'').trim().toLowerCase()
+  const keys = drug.name.replace(/\(.*?\)/g,'').trim().toLowerCase()
     .split(/\s+/).filter(w => w.length > 2);
+  if (drug.aliases) keys.push(...drug.aliases);
+  return keys;
 }
 function getBrandKeys(drug) {
   return drug.brand.toLowerCase().split(/[\/\s]+/)
@@ -1788,6 +1791,15 @@ function checkRecallInput() {
         recallFound.add(norm);
         matched = true;
         break outer;
+      }
+    }
+    if (drug.aliases) {
+      for (const alias of drug.aliases) {
+        if (alias === norm && !recallFound.has(normRecall(drug.name))) {
+          recallFound.add(normRecall(drug.name));
+          matched = true;
+          break outer;
+        }
       }
     }
   }
