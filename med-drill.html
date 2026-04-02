@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medication Drill</title>
+  <title>EMT Medication Practice</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -96,6 +96,12 @@
     .drug-name {
       font-size: 2.4rem; font-weight: 800; color: #e8eaf0;
       text-align: center; margin-bottom: 6px; letter-spacing: -0.5px;
+    }
+    .drug-name.indication-text {
+      font-size: 1.05rem; font-weight: 400; letter-spacing: 0;
+      line-height: 1.65; color: #c8cce0; text-align: left;
+      background: #12151c; border: 1px solid #2a3050;
+      border-radius: 8px; padding: 14px 16px; margin-bottom: 10px;
     }
     .drug-brand {
       text-align: center; color: #4a5370; font-size: 0.85rem;
@@ -366,7 +372,7 @@
 
 <header>
   <a href="index.html" class="home-link">← Home</a>
-  <h1>💊 Medication Drill</h1>
+  <h1>💊 EMT Medication Practice</h1>
   <span></span>
 </header>
 
@@ -379,6 +385,10 @@
     <button class="mode-btn" data-top="names">Medication Names</button>
     <button class="mode-btn" data-top="sort">Medication Sort</button>
     <button class="mode-btn" data-top="recall">Name Recall</button>
+  </div>
+  <div class="sub-toggle-row" id="learn-sub-toggle" style="display:flex">
+    <button class="sub-btn active" data-mode="category">Name → Indication</button>
+    <button class="sub-btn" data-mode="indication-to-name">Indication → Name</button>
   </div>
   <div class="sub-toggle-row" id="sub-toggle">
     <button class="sub-btn active" data-mode="brand-to-generic">Brand → Generic</button>
@@ -1131,19 +1141,27 @@ function nextDrug() {
   if (batchQueue.length === 0) { batchComplete(); return; }
 
   currentDrug = batchQueue.shift();
-  const prompt = document.getElementById('drill-prompt');
+  const prompt  = document.getElementById('drill-prompt');
+  const nameEl  = document.getElementById('drug-name');
+  const brandEl = document.getElementById('drug-brand');
+  nameEl.classList.remove('indication-text');
   if (drillMode === 'brand-to-generic') {
-    document.getElementById('drug-name').textContent  = currentDrug.brand.split('/')[0].trim();
-    document.getElementById('drug-brand').textContent = '';
-    prompt.textContent = 'What is the generic name?';
+    nameEl.textContent  = currentDrug.brand.split('/')[0].trim();
+    brandEl.textContent = '';
+    prompt.textContent  = 'What is the generic name?';
   } else if (drillMode === 'generic-to-brand') {
-    document.getElementById('drug-name').textContent  = currentDrug.name;
-    document.getElementById('drug-brand').textContent = '';
-    prompt.textContent = 'What is the brand name?';
+    nameEl.textContent  = currentDrug.name;
+    brandEl.textContent = '';
+    prompt.textContent  = 'What is the brand name?';
+  } else if (drillMode === 'indication-to-name') {
+    nameEl.textContent  = currentDrug.note;
+    nameEl.classList.add('indication-text');
+    brandEl.innerHTML   = `<span class="category-tag ${currentDrug.tag}">${currentDrug.category}</span>`;
+    prompt.textContent  = 'Name this medication (generic or brand):';
   } else {
-    document.getElementById('drug-name').textContent  = currentDrug.name;
-    document.getElementById('drug-brand').textContent = `Also known as: ${currentDrug.brand}`;
-    prompt.textContent = isSingleCategory()
+    nameEl.textContent  = currentDrug.name;
+    brandEl.textContent = `Also known as: ${currentDrug.brand}`;
+    prompt.textContent  = isSingleCategory()
       ? 'What condition specifically does this treat?'
       : 'What is this drug used to treat?';
   }
@@ -1166,6 +1184,11 @@ function checkAnswer() {
     correct    = getBrandKeys(currentDrug).some(k => answer.includes(k));
     tag        = `<span class="category-tag ${currentDrug.tag}">${currentDrug.brand}</span>`;
     answerNote = `<div class="explanation">Brand: <strong>${currentDrug.brand}</strong> | ${currentDrug.note}</div>`;
+  } else if (drillMode === 'indication-to-name') {
+    correct    = getGenericKeys(currentDrug).some(k => answer.includes(k))
+              || getBrandKeys(currentDrug).some(k => answer.includes(k));
+    tag        = `<span class="category-tag ${currentDrug.tag}">${currentDrug.name}</span>`;
+    answerNote = `<div class="explanation">Generic: <strong>${currentDrug.name}</strong> | Brand: <strong>${currentDrug.brand}</strong></div>`;
   } else {
     const keys = (isSingleCategory() && CONDITIONS[currentDrug.name])
       ? CONDITIONS[currentDrug.name]
@@ -1269,6 +1292,9 @@ document.getElementById('show-btn').addEventListener('click', () => {
     hint.innerHTML = `<div class="hint-answer">${currentDrug.name}</div>${info}`;
   } else if (drillMode === 'generic-to-brand') {
     hint.innerHTML = `<div class="hint-answer">${currentDrug.brand}</div>${info}`;
+  } else if (drillMode === 'indication-to-name') {
+    hint.innerHTML = `<div class="hint-answer">${currentDrug.name}</div>
+      <div class="explanation">Brand: <strong>${currentDrug.brand}</strong></div>`;
   } else {
     hint.innerHTML = info;
   }
@@ -1334,9 +1360,11 @@ document.getElementById('mode-toggle').addEventListener('click', e => {
   const top = btn.dataset.top;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const isNames  = top === 'names';
-  const isSort   = top === 'sort';
-  const isRecall = top === 'recall';
+  const isNames    = top === 'names';
+  const isLearn    = top === 'category';
+  const isSort     = top === 'sort';
+  const isRecall   = top === 'recall';
+  document.getElementById('learn-sub-toggle').style.display  = isLearn ? 'flex' : 'none';
   document.getElementById('sub-toggle').style.display        = isNames ? 'flex' : 'none';
   document.getElementById('filter-toggle-row').style.display = isNames ? 'flex' : 'none';
   collapseFilters();
@@ -1358,7 +1386,9 @@ document.getElementById('mode-toggle').addEventListener('click', e => {
   }
   showDrillUI();
   drillMode = isNames
-    ? (document.querySelector('.sub-btn.active')?.dataset.mode || 'brand-to-generic')
+    ? (document.querySelector('#sub-toggle .sub-btn.active')?.dataset.mode || 'brand-to-generic')
+    : isLearn
+    ? (document.querySelector('#learn-sub-toggle .sub-btn.active')?.dataset.mode || 'category')
     : 'category';
   wrongQueue = []; completedDrugs = []; batchesDone = 0;
   buildQueue(); startNewBatch();
@@ -1367,10 +1397,20 @@ document.getElementById('mode-toggle').addEventListener('click', e => {
 document.getElementById('sub-toggle').addEventListener('click', e => {
   const btn = e.target.closest('.sub-btn');
   if (!btn) return;
-  document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#sub-toggle .sub-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   drillMode = btn.dataset.mode;
   collapseFilters();
+  wrongQueue = []; completedDrugs = []; batchesDone = 0;
+  buildQueue(); startNewBatch();
+});
+
+document.getElementById('learn-sub-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('.sub-btn');
+  if (!btn) return;
+  document.querySelectorAll('#learn-sub-toggle .sub-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  drillMode = btn.dataset.mode;
   wrongQueue = []; completedDrugs = []; batchesDone = 0;
   buildQueue(); startNewBatch();
 });
