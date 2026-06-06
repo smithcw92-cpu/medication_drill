@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Medication Study Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; }
+
+  header { background: #16213e; padding: 20px 30px; border-bottom: 2px solid #0f3460; }
+  header h1 { font-size: 1.4rem; color: #e94560; letter-spacing: 1px; }
+  header p { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+  #top-bar { background: #16213e; padding: 10px 30px; border-bottom: 1px solid #0f3460; display: flex; justify-content: flex-end; }
+
+  thead th { user-select: none; }
+  thead th label { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; cursor: pointer; }
+  thead th label input[type=checkbox] { accent-color: #e94560; width: 13px; height: 13px; cursor: pointer; }
+  thead th label .chk-hint { font-size: 0.65rem; color: #e9456099; text-transform: none; letter-spacing: 0; font-weight: normal; }
+
+  #hint { background: #0f3460; padding: 8px 30px; font-size: 0.78rem; color: #888; border-bottom: 1px solid #0a2040; }
+  #hint span { color: #e94560; }
+
+  #stats { background: #16213e; padding: 10px 30px; font-size: 0.82rem; color: #aaa; border-bottom: 1px solid #0f3460; display: flex; gap: 24px; }
+  #stats b { color: #e0e0e0; }
+
+  #table-wrap { overflow-x: auto; padding: 20px 30px; }
+
+  table { border-collapse: collapse; width: 100%; min-width: 800px; }
+  thead th {
+    background: #0f3460;
+    color: #e94560;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e94560;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #222; transition: background 0.15s; }
+  tbody tr:hover { background: #1e2a4a; }
+  td { padding: 8px 12px; font-size: 0.85rem; vertical-align: middle; }
+  td.rank { color: #555; font-size: 0.75rem; width: 36px; }
+  td.static { color: #d0d0d0; }
+
+  .blank-cell { position: relative; }
+  .blank-cell input {
+    background: #0d1b35;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 0.83rem;
+    padding: 5px 8px;
+    width: 100%;
+    min-width: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .blank-cell input:focus { border-color: #0f3460; }
+  .blank-cell.correct input { border-color: #2ecc71; background: #0d2e1a; color: #2ecc71; }
+  .blank-cell.partial input { border-color: #e74c3c; background: #0d2e1a; color: #2ecc71; }
+  .blank-cell.incorrect input { border-color: #e74c3c; background: #2e0d0d; color: #e74c3c; }
+  .blank-cell .indicator {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+  }
+  .correct .indicator { background: #2ecc71; }
+  .partial .indicator { background: #e74c3c; }
+  .incorrect .indicator { background: #e74c3c; }
+  .revealed { font-size: 0.8rem; color: #aaa; margin-top: 3px; }
+
+  #reset-btn {
+    margin-left: auto;
+    background: #e94560;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #reset-btn:hover { background: #c73652; }
+
+  .no-blanks-msg { color: #e94560; font-size: 0.85rem; padding: 30px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Top 50 Prescribed Medications — Study Tool</h1>
+  <p>Choose which columns to blank out, then fill in the answers. Hold <b>Shift</b> to reveal.</p>
+</header>
+
+<div id="top-bar">
+  <button id="reset-btn">Reset All</button>
+</div>
+
+<div id="hint">
+  Hold <span>Shift</span> on any answer field to peek at the correct answer. Release to hide.
+</div>
+
+<div id="stats">
+  Score: <b id="stat-correct">0</b> correct &nbsp;/&nbsp; <b id="stat-total">0</b> answered
+</div>
+
+<div id="table-wrap">
+  <div id="table-container"></div>
+</div>
+
+<script>
+const DRUGS = [
+  [1,"Atorvastatin","Lipitor","Statin","High cholesterol","Muscle pain / rhabdomyolysis rare"],
+  [2,"Metformin","Glucophage","Biguanide","Type 2 diabetes","Lactic acidosis rare; hold concern in severe illness"],
+  [3,"Levothyroxine","Synthroid","Thyroid hormone","Hypothyroidism","Overdose may cause tachycardia"],
+  [4,"Lisinopril","Zestril, Prinivil","ACE inhibitor","HTN, heart failure","Angioedema, hyperkalemia"],
+  [5,"Amlodipine","Norvasc","Calcium channel blocker","HTN, angina","Overdose can cause severe hypotension"],
+  [6,"Metoprolol","Lopressor, Toprol XL","Beta blocker","HTN, heart disease","Bradycardia, hypotension"],
+  [7,"Albuterol","Ventolin, ProAir","Beta-2 agonist","Asthma / COPD","Tachycardia, tremor"],
+  [8,"Losartan","Cozaar","ARB","HTN","Hyperkalemia, hypotension"],
+  [9,"Gabapentin","Neurontin","Anticonvulsant","Neuropathic pain","Sedation, dizziness"],
+  [10,"Omeprazole","Prilosec","PPI","GERD","Long-term deficiency risks"],
+  [11,"Sertraline","Zoloft","SSRI","Depression / anxiety","Serotonin syndrome risk"],
+  [12,"Rosuvastatin","Crestor","Statin","High cholesterol","Myopathy rare"],
+  [13,"Pantoprazole","Protonix","PPI","GERD","Long-term deficiency risks"],
+  [14,"Escitalopram","Lexapro","SSRI","Depression / anxiety","Serotonin syndrome risk"],
+  [15,"Amphetamine salts","Adderall","Stimulant","ADHD","Tachycardia, hypertension"],
+  [16,"Hydrochlorothiazide","Microzide","Thiazide diuretic","HTN","Electrolyte abnormalities"],
+  [17,"Bupropion","Wellbutrin","Atypical antidepressant","Depression","Lowers seizure threshold"],
+  [18,"Fluoxetine","Prozac","SSRI","Depression / anxiety","Serotonin syndrome risk"],
+  [19,"Semaglutide","Ozempic / Wegovy","GLP-1 agonist","Diabetes, weight loss","GI effects, hypoglycemia with other meds"],
+  [20,"Montelukast","Singulair","Leukotriene antagonist","Asthma / allergies","Neuropsychiatric warnings"],
+  [21,"Trazodone","Desyrel","Serotonin modulator","Insomnia / depression","Sedation"],
+  [22,"Simvastatin","Zocor","Statin","High cholesterol","Myopathy rare"],
+  [23,"Amoxicillin","Amoxil","Penicillin antibiotic","Bacterial infections","Allergic reactions"],
+  [24,"Tamsulosin","Flomax","Alpha blocker","BPH","Orthostatic hypotension"],
+  [25,"Hydrocodone / APAP","Norco","Opioid analgesic","Pain","Respiratory depression"],
+  [26,"Fluticasone","Flonase / Flovent","Corticosteroid","Allergies / asthma","Local immunosuppression"],
+  [27,"Meloxicam","Mobic","NSAID","Arthritis pain","GI bleed risk"],
+  [28,"Apixaban","Eliquis","Anticoagulant","Clot prevention","Major bleeding"],
+  [29,"Furosemide","Lasix","Loop diuretic","Fluid overload","Dehydration / electrolyte loss"],
+  [30,"Insulin glargine","Lantus","Long-acting insulin","Diabetes","Hypoglycemia"],
+  [31,"Duloxetine","Cymbalta","SNRI","Depression, nerve pain","Serotonin syndrome risk"],
+  [32,"Ibuprofen","Advil","NSAID","Pain, fever","GI bleed, renal injury"],
+  [33,"Famotidine","Pepcid","H2 blocker","GERD","Generally well tolerated"],
+  [34,"Empagliflozin","Jardiance","SGLT2 inhibitor","Diabetes","Euglycemic DKA rare"],
+  [35,"Carvedilol","Coreg","Beta blocker","HF, HTN","Bradycardia"],
+  [36,"Tramadol","Ultram","Analgesic","Pain","Seizures, serotonin syndrome"],
+  [37,"Alprazolam","Xanax","Benzodiazepine","Anxiety","Respiratory depression with overdose"],
+  [38,"Prednisone","Deltasone","Steroid","Inflammation","Immunosuppression"],
+  [39,"Hydroxyzine","Atarax","Antihistamine","Anxiety, itching","Sedation"],
+  [40,"Buspirone","Buspar","Anxiolytic","Anxiety","Dizziness"],
+  [41,"Clopidogrel","Plavix","Antiplatelet","Stroke / MI prevention","Bleeding"],
+  [42,"Glipizide","Glucotrol","Sulfonylurea","Diabetes","Hypoglycemia"],
+  [43,"Citalopram","Celexa","SSRI","Depression","QT prolongation at high doses"],
+  [44,"Potassium chloride","Klor-Con","Electrolyte supplement","Hypokalemia","Hyperkalemia risk"],
+  [45,"Allopurinol","Zyloprim","Xanthine oxidase inhibitor","Gout","Rare severe rash"],
+  [46,"Aspirin","Bayer","NSAID / antiplatelet","Pain, clot prevention","Bleeding"],
+  [47,"Cyclobenzaprine","Flexeril","Muscle relaxant","Muscle spasm","Sedation"],
+  [48,"Ergocalciferol","Drisdol","Vitamin D","Vitamin D deficiency","Hypercalcemia if excessive"],
+  [49,"Oxycodone","OxyContin","Opioid","Pain","Respiratory depression"],
+  [50,"Methylphenidate","Ritalin / Concerta","Stimulant","ADHD","Tachycardia, hypertension"],
+];
+
+const COLS = [
+  { key: 'generic',  label: 'Generic Name',         idx: 1 },
+  { key: 'brand',    label: 'Brand Name(s)',          idx: 2 },
+  { key: 'class',    label: 'Drug Class',             idx: 3 },
+  { key: 'treats',   label: 'What It Treats',         idx: 4 },
+  { key: 'caution',  label: 'Key Caution / EMS',      idx: 5 },
+];
+
+let blanks = new Set(['treats']);
+let scores = {};
+
+function getCheckboxState() {
+  blanks = new Set();
+  COLS.forEach(c => {
+    const el = document.getElementById('chk-' + c.key);
+    if (el && el.checked) blanks.add(c.key);
+  });
+}
+
+const ALIASES = {
+  'htn': ['hypertension', 'hyper', 'tension'],
+  'bph': ['enlarged prostate', 'prostate', 'benign prostatic hyperplasia', 'hyperplasia', 'prostatic hyperplasia'],
+  'hf':  ['heart failure', 'heart'],
+  'mi':  ['myocardial infarction', 'heart attack', 'heart'],
+};
+
+function expandedWords(correct) {
+  let expanded = correct.toLowerCase();
+  Object.entries(ALIASES).forEach(([abbr, expansions]) => {
+    const re = new RegExp(`\\b${abbr}\\b`, 'gi');
+    if (re.test(expanded)) expanded += ' ' + expansions.join(' ');
+  });
+  return expanded.split(/[\s\/,\-]+/).filter(w => w.length > 1);
+}
+
+// Returns 'correct', 'partial', or 'incorrect'
+function checkAnswer(answer, correct) {
+  const a = answer.trim().toLowerCase();
+  if (!a) return null;
+  const known = expandedWords(correct);
+  const hasMatch = known.some(w => a.includes(w));
+  if (!hasMatch) return 'incorrect';
+  const inputWords = a.split(/[\s\/,\-]+/).filter(w => w.length > 1);
+  const hasStray = inputWords.some(w => !known.some(k => k.includes(w) || w.includes(k)));
+  return hasStray ? 'partial' : 'correct';
+}
+
+function updateStats() {
+  let total = 0, correct = 0;
+  Object.values(scores).forEach(v => { total++; if (v === 'correct') correct++; });
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-total').textContent = total;
+}
+
+function renderTable() {
+  getCheckboxState();
+  scores = {};
+  updateStats();
+  const container = document.getElementById('table-container');
+
+
+  let html = '<table><thead><tr><th>#</th>';
+  COLS.forEach(c => {
+    const checked = blanks.has(c.key) ? 'checked' : '';
+    html += `<th><label>
+      <span>${c.label}</span>
+      <span class="chk-hint"><input type="checkbox" id="chk-${c.key}" ${checked}> blank out</span>
+    </label></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  DRUGS.forEach((drug, ri) => {
+    html += `<tr>`;
+    html += `<td class="rank">${drug[0]}</td>`;
+    COLS.forEach(c => {
+      const val = drug[c.idx];
+      if (blanks.has(c.key)) {
+        html += `<td class="blank-cell" id="cell-${ri}-${c.key}">
+          <input type="text" placeholder="?" autocomplete="off"
+            data-row="${ri}" data-col="${c.key}" data-answer="${val.replace(/"/g,'&quot;')}"
+            id="inp-${ri}-${c.key}">
+          <span class="indicator" id="ind-${ri}-${c.key}"></span>
+        </td>`;
+      } else {
+        html += `<td class="static">${val}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  // Wire up events
+  container.querySelectorAll('input[data-row]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const ri = inp.dataset.row, ck = inp.dataset.col, ans = inp.dataset.answer;
+      const cell = document.getElementById(`cell-${ri}-${ck}`);
+      const rev = cell.querySelector('.revealed');
+      if (rev) rev.remove();
+      if (inp.value.trim() === '') {
+        cell.classList.remove('correct','partial','incorrect');
+        delete scores[`${ri}-${ck}`];
+        updateStats();
+        return;
+      }
+      const result = checkAnswer(inp.value, ans);
+      cell.classList.remove('correct','partial','incorrect');
+      cell.classList.add(result);
+      scores[`${ri}-${ck}`] = result === 'correct' ? 'correct' : 'incorrect';
+      updateStats();
+    });
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Shift') {
+        const cell = document.getElementById(`cell-${inp.dataset.row}-${inp.dataset.col}`);
+        if (!cell.querySelector('.revealed')) {
+          const d = document.createElement('div');
+          d.className = 'revealed';
+          d.textContent = inp.dataset.answer;
+          cell.appendChild(d);
+        }
+      }
+    });
+
+    inp.addEventListener('keyup', e => {
+      if (e.key === 'Shift') {
+        const cell = document.getElementById(`cell-${inp.dataset.row}-${inp.dataset.col}`);
+        const rev = cell.querySelector('.revealed');
+        if (rev) rev.remove();
+      }
+    });
+  });
+
+  // Wire header checkboxes
+  COLS.forEach(c => {
+    document.getElementById('chk-' + c.key).addEventListener('change', renderTable);
+  });
+}
+
+document.getElementById('reset-btn').addEventListener('click', renderTable);
+
+renderTable();
+</script>
+</body>
+</html>
